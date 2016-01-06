@@ -255,9 +255,9 @@ public class CleanupAgent {
 
 		@Override
 		public boolean satisfies(State s) {
-//			if(gp.isTrue(s)){
-//				System.out.println("goal!!");
-//			}
+			//			if(gp.isTrue(s)){
+			//				System.out.println("goal!!");
+			//			}
 			return gp.isTrue(s);
 		}
 	}
@@ -522,32 +522,32 @@ public class CleanupAgent {
 
 
 
-//		GroundedPropSC l0sct = new GroundedPropSC(new GroundedProp(domain.getPropFunction(CleanupWorld.PF_BLOCK_IN_DOOR), new String[]{"block0", "door1"}));
-//		GoalBasedRF l0rft = new GoalBasedRF(l0sct, 1., 0.);
-//		GoalConditionTF l0tft = new GoalConditionTF(l0sct);
-//
-//		CleanupWorld.setAgent(s, 5, 3);
-//
-//		BoundedRTDP planner = new BoundedRTDP(domain, l0rft, l0tft, 0.99, new SimpleHashableStateFactory(false), new ValueFunctionInitialization.ConstantValueFunctionInitialization(0.), new BlockToRegionHeuristic("block0", "door1", 0.99, 0.5), 0.01, 500);
-//		Policy p = planner.planFromState(s);
-//
-//		printQs(planner, s);
-//
-//		EpisodeAnalysis tea = p.evaluateBehavior(s, l0rft, l0tft, 15);
-//		System.out.println(tea.getActionSequenceString("\n"));
+		//		GroundedPropSC l0sct = new GroundedPropSC(new GroundedProp(domain.getPropFunction(CleanupWorld.PF_BLOCK_IN_DOOR), new String[]{"block0", "door1"}));
+		//		GoalBasedRF l0rft = new GoalBasedRF(l0sct, 1., 0.);
+		//		GoalConditionTF l0tft = new GoalConditionTF(l0sct);
+		//
+		//		CleanupWorld.setAgent(s, 5, 3);
+		//
+		//		BoundedRTDP planner = new BoundedRTDP(domain, l0rft, l0tft, 0.99, new SimpleHashableStateFactory(false), new ValueFunctionInitialization.ConstantValueFunctionInitialization(0.), new BlockToRegionHeuristic("block0", "door1", 0.99, 0.5), 0.01, 500);
+		//		Policy p = planner.planFromState(s);
+		//
+		//		printQs(planner, s);
+		//
+		//		EpisodeAnalysis tea = p.evaluateBehavior(s, l0rft, l0tft, 15);
+		//		System.out.println(tea.getActionSequenceString("\n"));
 
 
 
 
-//		VisualExplorer exp = new VisualExplorer(domain, CleanupVisualizer.getVisualizer("data/resources/robotImages"), s);
-//		exp.initGUI();
+		//		VisualExplorer exp = new VisualExplorer(domain, CleanupVisualizer.getVisualizer("data/resources/robotImages"), s);
+		//		exp.initGUI();
 
 
 
 		CleanupAgent agent = new CleanupAgent(domain, adomain, a2domain, l2rf, l2tf, 0.5);
 		EpisodeAnalysis ea = agent.actUntilTermination(env, 100);
 
-		Visualizer v = CleanupVisualizer.getVisualizer("data/resources/robotImages");
+		Visualizer v = CleanupVisualizer.getVisualizer("amdp/data/resources/robotImages");
 		new EpisodeSequenceVisualizer(v, domain, Arrays.asList(ea));
 
 
