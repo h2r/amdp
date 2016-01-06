@@ -19,8 +19,6 @@ import burlap.oomdp.singleagent.common.SimpleGroundedAction;
 public abstract class ObjectParameterizedAMDPAction extends ObjectParameterizedAction{
 
 	
-	//TODO: check if other constructors are needed
-	
 	public ObjectParameterizedAMDPAction(String name, Domain domain, String[] parameterClasses) {
 		super(name, domain, parameterClasses);
 		// TODO Auto-generated constructor stub 

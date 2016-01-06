@@ -5,11 +5,16 @@ import burlap.oomdp.singleagent.pomdp.PODomain;
 
 public class POAMDPDomain extends PODomain implements AMDPDomain{
 
-	//TODO: what methods should this class have????
+	protected StateMapping stateMapper;
+
 	@Override
 	public StateMapping getStateMapper() {
-		// TODO Auto-generated method stub
-		return null;
+		return stateMapper;
 	}
+
+	public void setStateMapper(StateMapping sm){
+		stateMapper = sm;
+	}
+
 
 }

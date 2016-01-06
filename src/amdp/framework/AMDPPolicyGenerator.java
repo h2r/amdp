@@ -1,7 +1,9 @@
 package amdp.framework;
 
 import burlap.behavior.policy.Policy;
+import burlap.oomdp.core.TerminalFunction;
 import burlap.oomdp.core.states.State;
+import burlap.oomdp.singleagent.RewardFunction;
 
 /**
  * This is a Policy Generating Interface for AMDPs. The purpose of such policy generators is to 
@@ -12,6 +14,8 @@ import burlap.oomdp.core.states.State;
  */
 public interface AMDPPolicyGenerator {
 
-	public Policy generatePolicy(State s, AMDPGroundedAction a);
+//	public Policy generatePolicy(State s, AMDPGroundedAction a);
+	
+	public Policy generatePolicy(State s, RewardFunction rf, TerminalFunction tf);
 	
 }
