@@ -87,7 +87,7 @@ public class CleanupVideo {
 		CleanupAgent agent = new CleanupAgent(domain, adomain, a2domain, l2rf, l2tf, 0.5);
 		EpisodeAnalysis ea = agent.actUntilTermination(env, 500);
 
-		Visualizer v = CleanupVisualizer.getVisualizer("data/resources/robotImages");
+		Visualizer v = CleanupVisualizer.getVisualizer("amdp/data/resources/robotImages");
 		new EpisodeSequenceVisualizer(v, domain, Arrays.asList(ea));
 
 
@@ -142,7 +142,7 @@ public class CleanupVideo {
 			System.out.println(i + " " + ea.getAction(i).toString() + " " + brtd.getQ(ea.getState(i), ea.getAction(i)).q);
 		}
 
-		new EpisodeSequenceVisualizer(CleanupVisualizer.getVisualizer("data/resources/robotImages"), domain, Arrays.asList(ea));
+		new EpisodeSequenceVisualizer(CleanupVisualizer.getVisualizer("amdp/data/resources/robotImages"), domain, Arrays.asList(ea));
 
 
 	}

@@ -155,6 +155,7 @@ public class CleanupAgent {
 		TerminalFunction l0tf = this.getL0Tf(l0State, l1Action);
 		ValueFunctionInitialization heuristic = this.getL0Heuristic(l0State, l1Action);
 
+//		System.out.println(heuristic.value(l0State));
 		BoundedRTDP brtd = new BoundedRTDP(l0, l0rf, l0tf, this.discount, new SimpleHashableStateFactory(false), new ValueFunctionInitialization.ConstantValueFunctionInitialization(0.), heuristic, 0.01, 500);
 		brtd.setMaxRolloutDepth(50);
 		brtd.toggleDebugPrinting(false);

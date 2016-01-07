@@ -45,6 +45,10 @@ public class PullCostGoalRF extends GoalBasedRF{
 	public void setPullCost(double pullCost) {
 		this.pullCost = pullCost;
 	}
+	
+	public StateConditionTest getStateCondition(){
+		return this.gc;
+	}
 
 	@Override
 	public double reward(State s, GroundedAction a, State sprime) {
