@@ -4,7 +4,7 @@ import amdp.cleanupdomain.CleanupL1AMDPDomain.GroundedPropSC;
 import amdp.framework.AMDPAgent;
 import amdp.framework.AMDPPolicyGenerator;
 import amdp.hardcoded.cleanup.FixedDoorCleanupEnv;
-import amdp.tools.StackObserver;
+import amdp.tools.VisualEnvStackObserver;
 import burlap.behavior.policy.GreedyQPolicy;
 import burlap.behavior.policy.Policy;
 import burlap.behavior.singleagent.EpisodeAnalysis;
@@ -39,7 +39,13 @@ import java.util.List;
 
 
 
+
 public class CleanupDomainDriver {
+
+
+	static String imagePathNakul = "amdp/data/resources/robotImages";
+	static String imagePathJames = "data/resources/robotImages";
+	static String imagePath = imagePathJames;
 
 	static double lockProb = 0.5;
 	public static void main(String[] args) {
@@ -102,12 +108,15 @@ public class CleanupDomainDriver {
 
 		AMDPAgent agent = new AMDPAgent(domainList, pgList, l2rf, l2tf);
 
-		EnvironmentServer envServer = new EnvironmentServer(env, new StackObserver(CleanupVisualizer.getVisualizer("amdp/data/resources/robotImages"), agent, 500));
+		VisualEnvStackObserver so = new VisualEnvStackObserver(CleanupVisualizer.getVisualizer(imagePath), agent, 500);
+		agent.setOnlineStackObserver(so);
+		so.updateState(env.getCurrentObservation());
+		EnvironmentServer envServer = new EnvironmentServer(env, so);
 
 		EpisodeAnalysis ea = agent.actUntilTermination(envServer, 500);
 		
 
-		Visualizer v = CleanupVisualizer.getVisualizer("amdp/data/resources/robotImages");
+		Visualizer v = CleanupVisualizer.getVisualizer(imagePath);
 		//		System.out.println(ea.getState(0).toString());
 		new EpisodeSequenceVisualizer(v, domain, Arrays.asList(ea));
 

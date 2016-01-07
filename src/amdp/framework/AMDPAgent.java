@@ -1,5 +1,6 @@
 package amdp.framework;
 
+import amdp.tools.StackObserver;
 import burlap.behavior.policy.Policy;
 import burlap.behavior.singleagent.EpisodeAnalysis;
 import burlap.debugtools.DPrint;
@@ -35,6 +36,8 @@ public class AMDPAgent{
 	protected int maxLevel;
 
 	protected List<List<AbstractGroundedAction>> policyStack;
+
+	protected StackObserver onlineStackObserver;
 	
 
 
@@ -65,12 +68,20 @@ public class AMDPAgent{
 		return policyStack;
 	}
 
+	public StackObserver getOnlineStackObserver() {
+		return onlineStackObserver;
+	}
+
+	public void setOnlineStackObserver(StackObserver onlineStackObserver) {
+		this.onlineStackObserver = onlineStackObserver;
+	}
+
 	public EpisodeAnalysis actUntilTermination(Environment env){
 
 		return this.actUntilTermination(env, -1);
 
 	}
-	
+
 	public EpisodeAnalysis actUntilTermination(Environment env, int maxSteps){
 		
 		State baseState = env.getCurrentObservation();
@@ -104,7 +115,10 @@ public class AMDPAgent{
 				String str = StringUtils.repeat("	", maxLevel - level);
 				str = str + a.toString();
 				DPrint.cl(debugCode , str);
-				this.policyStack.get(maxLevel - level).add(a);
+				this.policyStack.get(level).add(a);
+				if(this.onlineStackObserver != null){
+					this.onlineStackObserver.updatePolicyStack(this.policyStack);
+				}
 				decompose(env, level - 1, a.getRF(), a.getTF(), maxSteps, ea);
 				s = StateStack.get(level);
 			}
@@ -113,7 +127,10 @@ public class AMDPAgent{
 			while((!env.isInTerminalState() && !tf.isTerminal(s) )&& (stepCount < maxSteps || maxSteps == -1)){
 				// this is a grounded action at the base level
 				GroundedAction ga = (GroundedAction) pi.getAction(s);
-				this.policyStack.get(maxLevel - level).add(ga);
+				this.policyStack.get(level).add(ga);
+				if(this.onlineStackObserver != null){
+					this.onlineStackObserver.updatePolicyStack(this.policyStack);
+				}
 				
 				EnvironmentOutcome eo = env.executeAction(ga);
 
@@ -133,7 +150,7 @@ public class AMDPAgent{
 			StateStack.set(level+1, ((AMDPDomain)DomainList.get(level+1)).getStateMapper().mapState(StateStack.get(level)));
 		}
 
-		this.policyStack.get(maxLevel - level).clear();
+		this.policyStack.get(level).clear();
 	}
 
 
