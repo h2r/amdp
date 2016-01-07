@@ -24,7 +24,6 @@ public class AMDPAgent{
 
 	// This is a stack of states storing states at each level.
 	List<State> StateStack = new ArrayList<State>();
-	Environment env;
 	
 	RewardFunction rf;
 	TerminalFunction tf;
