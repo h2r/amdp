@@ -108,7 +108,7 @@ public class CleanupDomainDriver {
 
 		AMDPAgent agent = new AMDPAgent(domainList, pgList, l2rf, l2tf);
 
-		VisualEnvStackObserver so = new VisualEnvStackObserver(CleanupVisualizer.getVisualizer(imagePath), agent, 500);
+		VisualEnvStackObserver so = new VisualEnvStackObserver(CleanupVisualizer.getVisualizer(imagePath), agent, 1000);
 		agent.setOnlineStackObserver(so);
 		so.updateState(env.getCurrentObservation());
 		EnvironmentServer envServer = new EnvironmentServer(env, so);
