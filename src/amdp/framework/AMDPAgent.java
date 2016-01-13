@@ -1,13 +1,10 @@
 package amdp.framework;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.commons.lang3.StringUtils;
-
+import amdp.tools.StackObserver;
 import burlap.behavior.policy.Policy;
 import burlap.behavior.singleagent.EpisodeAnalysis;
 import burlap.debugtools.DPrint;
+import burlap.oomdp.core.AbstractGroundedAction;
 import burlap.oomdp.core.Domain;
 import burlap.oomdp.core.TerminalFunction;
 import burlap.oomdp.core.states.MutableState;
@@ -16,6 +13,10 @@ import burlap.oomdp.singleagent.GroundedAction;
 import burlap.oomdp.singleagent.RewardFunction;
 import burlap.oomdp.singleagent.environment.Environment;
 import burlap.oomdp.singleagent.environment.EnvironmentOutcome;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class AMDPAgent{
 
@@ -24,7 +25,6 @@ public class AMDPAgent{
 
 	// This is a stack of states storing states at each level.
 	List<State> StateStack = new ArrayList<State>();
-	Environment env;
 	
 	RewardFunction rf;
 	TerminalFunction tf;
@@ -33,7 +33,11 @@ public class AMDPAgent{
 	
 	protected int stepCount = 0;
 	
-	protected int maxLevel; 
+	protected int maxLevel;
+
+	protected List<List<AbstractGroundedAction>> policyStack;
+
+	protected StackObserver onlineStackObserver;
 	
 
 
@@ -53,14 +57,31 @@ public class AMDPAgent{
 			StateStack.add(new MutableState());
 			}
 		this.maxLevel = this.DomainList.size()-1;
+
+		this.policyStack = new ArrayList<List<AbstractGroundedAction>>(inputDomainList.size());
+		for(int i = 0; i < inputDomainList.size(); i++){
+			this.policyStack.add(new ArrayList<AbstractGroundedAction>());
+		}
 	}
-	
+
+	public List<List<AbstractGroundedAction>> getPolicyStack() {
+		return policyStack;
+	}
+
+	public StackObserver getOnlineStackObserver() {
+		return onlineStackObserver;
+	}
+
+	public void setOnlineStackObserver(StackObserver onlineStackObserver) {
+		this.onlineStackObserver = onlineStackObserver;
+	}
+
 	public EpisodeAnalysis actUntilTermination(Environment env){
 
 		return this.actUntilTermination(env, -1);
 
 	}
-	
+
 	public EpisodeAnalysis actUntilTermination(Environment env, int maxSteps){
 		
 		State baseState = env.getCurrentObservation();
@@ -94,8 +115,11 @@ public class AMDPAgent{
 				String str = StringUtils.repeat("	", maxLevel - level);
 				str = str + a.toString();
 				DPrint.cl(debugCode , str);
-//				System.out.println(a.toString());
-				decompose(env, level-1, a.getRF(), a.getTF(), maxSteps, ea);
+				this.policyStack.get(level).add(a);
+				if(this.onlineStackObserver != null){
+					this.onlineStackObserver.updatePolicyStack(this.policyStack);
+				}
+				decompose(env, level - 1, a.getRF(), a.getTF(), maxSteps, ea);
 				s = StateStack.get(level);
 			}
 		}
@@ -103,15 +127,17 @@ public class AMDPAgent{
 			while((!env.isInTerminalState() && !tf.isTerminal(s) )&& (stepCount < maxSteps || maxSteps == -1)){
 				// this is a grounded action at the base level
 				GroundedAction ga = (GroundedAction) pi.getAction(s);
+				this.policyStack.get(level).add(ga);
+				if(this.onlineStackObserver != null){
+					this.onlineStackObserver.updatePolicyStack(this.policyStack);
+				}
 				
 				EnvironmentOutcome eo = env.executeAction(ga);
-				
-//				System.out.println(ga.toString() + " " +stepCount);
+
 				String str = StringUtils.repeat("	", maxLevel - level);
 				str = str + ga.toString();
 				DPrint.cl(debugCode , str);
 				ea.recordTransitionTo(ga, eo.op, eo.r);
-//				StateStack.
 				StateStack.set(level, eo.op);
 				s = eo.op;	
 				stepCount++;
@@ -121,9 +147,10 @@ public class AMDPAgent{
 		
 		if(level < DomainList.size() -1){
 			// project state up and getting new next state after running a policy to termination
-//			System.out.println(StateStack.size() + " " + level );
 			StateStack.set(level+1, ((AMDPDomain)DomainList.get(level+1)).getStateMapper().mapState(StateStack.get(level)));
 		}
+
+		this.policyStack.get(level).clear();
 	}
 
 

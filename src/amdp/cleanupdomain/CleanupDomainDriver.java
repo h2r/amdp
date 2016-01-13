@@ -1,16 +1,10 @@
 package amdp.cleanupdomain;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import amdp.cleanupdomain.CleanupL1AMDPDomain.GroundedPropSC;
 import amdp.framework.AMDPAgent;
 import amdp.framework.AMDPPolicyGenerator;
 import amdp.hardcoded.cleanup.FixedDoorCleanupEnv;
-
-
-
+import amdp.tools.VisualEnvStackObserver;
 import burlap.behavior.policy.GreedyQPolicy;
 import burlap.behavior.policy.Policy;
 import burlap.behavior.singleagent.EpisodeAnalysis;
@@ -19,10 +13,6 @@ import burlap.behavior.singleagent.planning.Planner;
 import burlap.behavior.singleagent.planning.deterministic.DDPlannerPolicy;
 import burlap.behavior.singleagent.planning.deterministic.uninformed.bfs.BFS;
 import burlap.behavior.singleagent.planning.stochastic.rtdp.BoundedRTDP;
-
-import burlap.behavior.singleagent.planning.stochastic.sparsesampling.SparseSampling;
-
-import burlap.behavior.singleagent.planning.stochastic.valueiteration.ValueIteration;
 import burlap.behavior.valuefunction.QFunction;
 import burlap.behavior.valuefunction.ValueFunctionInitialization;
 import burlap.domain.singleagent.cleanup.CleanupVisualizer;
@@ -30,25 +20,32 @@ import burlap.domain.singleagent.cleanup.CleanupWorld;
 import burlap.oomdp.auxiliary.common.GoalConditionTF;
 import burlap.oomdp.auxiliary.stateconditiontest.StateConditionTest;
 import burlap.oomdp.auxiliary.stateconditiontest.TFGoalCondition;
-import burlap.oomdp.core.AbstractGroundedAction;
-import burlap.oomdp.core.Domain;
-import burlap.oomdp.core.GroundedProp;
-import burlap.oomdp.core.PropositionalFunction;
-import burlap.oomdp.core.TerminalFunction;
+import burlap.oomdp.core.*;
 import burlap.oomdp.core.objects.ObjectInstance;
 import burlap.oomdp.core.states.State;
 import burlap.oomdp.singleagent.GroundedAction;
 import burlap.oomdp.singleagent.RewardFunction;
 import burlap.oomdp.singleagent.common.GoalBasedRF;
+import burlap.oomdp.singleagent.environment.EnvironmentServer;
 import burlap.oomdp.statehashing.SimpleHashableStateFactory;
 import burlap.oomdp.visualizer.Visualizer;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 //TODO: top level RF, top level TF low level TF for the env.
 //TODO: all the policy generators and all the huristics
 
 
 
+
 public class CleanupDomainDriver {
+
+
+	static String imagePathNakul = "amdp/data/resources/robotImages";
+	static String imagePathJames = "data/resources/robotImages";
+	static String imagePath = imagePathJames;
 
 	static double lockProb = 0.5;
 	public static void main(String[] args) {
@@ -112,10 +109,15 @@ public class CleanupDomainDriver {
 
 		AMDPAgent agent = new AMDPAgent(domainList, pgList, l2rf, l2tf);
 
-		EpisodeAnalysis ea = agent.actUntilTermination(env, 500);
+		VisualEnvStackObserver so = new VisualEnvStackObserver(CleanupVisualizer.getVisualizer(imagePath), agent, 1000);
+		agent.setOnlineStackObserver(so);
+		so.updateState(env.getCurrentObservation());
+		EnvironmentServer envServer = new EnvironmentServer(env, so);
+
+		EpisodeAnalysis ea = agent.actUntilTermination(envServer, 500);
 		
 
-		Visualizer v = CleanupVisualizer.getVisualizer("amdp/data/resources/robotImages");
+		Visualizer v = CleanupVisualizer.getVisualizer(imagePath);
 		//		System.out.println(ea.getState(0).toString());
 		new EpisodeSequenceVisualizer(v, domain, Arrays.asList(ea));
 
