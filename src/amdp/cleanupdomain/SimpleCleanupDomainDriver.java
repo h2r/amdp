@@ -61,9 +61,9 @@ public class SimpleCleanupDomainDriver {
 
 	public static void generateBehavior(){
 
-//		double lockProb = 0.5;
+		//		double lockProb = 0.5;
 
-		
+
 		CleanupWorld dgen = new CleanupWorld();
 		dgen.includeDirectionAttribute(true);
 		dgen.includePullAction(true);
@@ -97,29 +97,34 @@ public class SimpleCleanupDomainDriver {
 
 		//SimulatedEnvironment env = new SimulatedEnvironment(envDomain, l0rf, l0tf, s);
 		FixedDoorCleanupEnv env = new FixedDoorCleanupEnv(domain, l0rf, l0tf, s);
-		
+
 		List<Domain> domainList = new ArrayList<Domain>();
 		domainList.add(0,domain);
 		domainList.add(1,adomain);
 		domainList.add(2,a2domain);
-		
+
 		List<AMDPPolicyGenerator> pgList = new ArrayList<AMDPPolicyGenerator>();
 		pgList.add(0,new l0PolicyGenerator(domain));
 		pgList.add(1,new l1PolicyGenerator(adomain));
 		pgList.add(2,new l2PolicyGenerator(a2domain));
-		
-		
+
+
 		AMDPAgent agent = new AMDPAgent(domainList, pgList, l2rf, l2tf);
-		
+
+		long startTime = System.currentTimeMillis();
 		EpisodeAnalysis ea = agent.actUntilTermination(env, 100);
+
+		long endTime = System.currentTimeMillis();
+		long duration = (endTime - startTime);
+		System.out.println("total time: " + duration);
 		
-		for(int i = 0; i< ea.actionSequence.size();i++){
-			System.out.println(ea.getAction(i));
-		}
-		
+//		for(int i = 0; i< ea.actionSequence.size();i++){
+//			System.out.println(ea.getAction(i));
+//		}
+
 		Visualizer v = CleanupVisualizer.getVisualizer("amdp/data/resources/robotImages");
 		new EpisodeSequenceVisualizer(v, domain, Arrays.asList(ea));
-		
+
 	}
 
 	public static class L0Goal implements StateConditionTest{
@@ -151,7 +156,7 @@ public class SimpleCleanupDomainDriver {
 		}
 
 	}
-	
+
 	public static class L2Goal implements StateConditionTest{
 
 		List<String> blocks;
@@ -177,8 +182,8 @@ public class SimpleCleanupDomainDriver {
 			return true;
 		}
 	}
-	
-	
+
+
 	public static State getState(Domain domain){
 
 
@@ -212,14 +217,14 @@ public class SimpleCleanupDomainDriver {
 
 	}
 
-	
+
 	public static class l2PolicyGenerator implements AMDPPolicyGenerator{
 
 		private Domain l2;
 		public l2PolicyGenerator(Domain l2In){
 			l2 = l2In;
 		}
-		
+
 		@Override
 		public Policy generatePolicy(State s, RewardFunction rf, TerminalFunction tf) {
 			BFS bfs = new BFS(l2, new TFGoalCondition(tf), new SimpleHashableStateFactory(false));
@@ -227,9 +232,9 @@ public class SimpleCleanupDomainDriver {
 			DDPlannerPolicy policy = new DDPlannerPolicy(bfs);
 			return policy;
 		}
-		
+
 	}
-	
+
 	public static class l1PolicyGenerator implements AMDPPolicyGenerator{
 		private Domain l1;
 		protected double discount = 0.99;
@@ -256,31 +261,31 @@ public class SimpleCleanupDomainDriver {
 
 			return new GreedyReplan(brtdp);
 		}
-		
-		
+
+
 	}
-	
+
 	public static class l0PolicyGenerator implements AMDPPolicyGenerator{
 		private Domain l0;
 		protected double discount = 0.99;
 		public l0PolicyGenerator(Domain l0In){
 			l0 = l0In;
 		}
-		
+
 		@Override
 		public Policy generatePolicy(State s, RewardFunction rf, TerminalFunction tf) {
 			RewardFunction l0rf = rf;
 			TerminalFunction l0tf = tf;
-			
-//			System.out.println(heuristic.value(s));
-			
-//			ValueIteration vi = new ValueIteration(l0, l0rf, l0tf, this.discount, new SimpleHashableStateFactory(false), 0.1, 50);
-//			return vi.planFromState(s);
-			
-			
-//			SparseSampling sp = new SparseSampling(l0, l0rf, l0tf, this.discount, new SimpleHashableStateFactory(false), 10, 10);
-//			
-//			return sp.planFromState(s);
+
+			//			System.out.println(heuristic.value(s));
+
+			//			ValueIteration vi = new ValueIteration(l0, l0rf, l0tf, this.discount, new SimpleHashableStateFactory(false), 0.1, 50);
+			//			return vi.planFromState(s);
+
+
+			//			SparseSampling sp = new SparseSampling(l0, l0rf, l0tf, this.discount, new SimpleHashableStateFactory(false), 10, 10);
+			//			
+			//			return sp.planFromState(s);
 
 
 			ValueFunctionInitialization heuristic = getL0Heuristic(s, rf);
@@ -289,10 +294,10 @@ public class SimpleCleanupDomainDriver {
 			brtd.toggleDebugPrinting(false);
 			return brtd.planFromState(s);
 		}
-		
+
 	}
-	
-	
+
+
 	public static ValueFunctionInitialization getL0Heuristic(State s, RewardFunction rf){
 
 		double discount = 0.99;
@@ -300,17 +305,16 @@ public class SimpleCleanupDomainDriver {
 		GroundedPropSC rfCondition = (GroundedPropSC)((PullCostGoalRF)rf).getGoalCondition();
 		String PFName = rfCondition.gp.pf.getName();
 		String[] params = rfCondition.gp.params;
-		String test = PFName;
-		for(int i =0;i<params.length;i++){
-			test = test + ", " +params[i];
-		}
-		System.out.println("Test condition:" + test);
-//		ObjectParameterizedAction.ObjectParameterizedGroundedAction oga = (ObjectParameterizedAction.ObjectParameterizedGroundedAction)l1Action;
+		//		String test = PFName;
+		//		for(int i =0;i<params.length;i++){
+		//			test = test + ", " +params[i];
+		//		}
+		//		System.out.println("Test condition:" + test);
+		//		ObjectParameterizedAction.ObjectParameterizedGroundedAction oga = (ObjectParameterizedAction.ObjectParameterizedGroundedAction)l1Action;
 		if(PFName.equals(CleanupWorld.PF_AGENT_IN_ROOM)){
 			return new AgentToRegionHeuristic(params[1], discount, lockProb);
 		}
 		else if(PFName.equals(CleanupWorld.PF_AGENT_IN_DOOR)){
-			System.out.println("was here");
 			return new AgentToRegionHeuristic(params[1], discount, lockProb);
 		}
 		else if(PFName.equals(CleanupWorld.PF_BLOCK_IN_ROOM)){
@@ -319,21 +323,9 @@ public class SimpleCleanupDomainDriver {
 		else if(PFName.equals(CleanupWorld.PF_BLOCK_IN_DOOR)){
 			return new BlockToRegionHeuristic(params[0], params[1], discount, lockProb);
 		}
-//		if(l1Action.actionName().equals(CleanupL1Domain.ACTION_AGENT_TO_ROOM)){
-//			return new AgentToRegionHeuristic(oga.params[0], discount, lockProb);
-//		}
-//		else if(l1Action.actionName().equals(CleanupL1Domain.ACTION_AGENT_TO_DOOR)){
-//			return new AgentToRegionHeuristic(oga.params[0], discount, lockProb);
-//		}
-//		else if(l1Action.actionName().equals(CleanupL1Domain.ACTION_BLOCK_TO_ROOM)){
-//			return new BlockToRegionHeuristic(oga.params[0], oga.params[1], discount, lockProb);
-//		}
-//		else if(l1Action.actionName().equals(CleanupL1Domain.ACTION_BLOCK_TO_DOOR)){
-//			return new BlockToRegionHeuristic(oga.params[0], oga.params[1], discount, lockProb);
-//		}
 		throw new RuntimeException("Unknown Reward Function with propositional function " + PFName + ". Cannot construct l0 heuristic.");
 	}
-	
+
 	public static class AgentToRegionHeuristic implements ValueFunctionInitialization{
 
 		String goalRegion;
@@ -460,8 +452,8 @@ public class SimpleCleanupDomainDriver {
 			return v;
 		}
 	}
-	
-	
+
+
 	public static int manDistance(int x0, int y0, int x1, int y1){
 		return Math.abs(x0-x1) + Math.abs(y0-y1);
 	}
@@ -498,10 +490,10 @@ public class SimpleCleanupDomainDriver {
 
 		return dist;
 	}
-	
-	
-	
-	
+
+
+
+
 	public static class GreedyReplan extends GreedyQPolicy{
 
 		public GreedyReplan(QFunction planner) {

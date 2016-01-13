@@ -84,6 +84,7 @@ public class CleanupDomainDriver {
 
 		List<String> goalBlocks = Arrays.asList("block0", "block1");
 		List<String> goalRooms = Arrays.asList("room3", "room3");
+		
 
 
 
@@ -191,6 +192,7 @@ public class CleanupDomainDriver {
 		State s = CleanupWorld.getCleanState(domain, 4, 4, 3);
 		CleanupWorld.setRoom(s, 0, y2, x1, 0, x2, "red");
 		CleanupWorld.setRoom(s, 1, y2, 0, y1, x1, "blue");
+//		CleanupWorld.setRoom(s, 1, y2, 0, 0, x1, "blue");
 		CleanupWorld.setRoom(s, 2, y3, 0, y2, x3, "green");
 		CleanupWorld.setRoom(s, 3, y2, x2, 0, x3, "yellow");
 
@@ -203,7 +205,7 @@ public class CleanupDomainDriver {
 		CleanupWorld.setAgent(s, 7, 1);
 
 		CleanupWorld.setBlock(s, 0, 5, 4, "chair", "blue");
-		CleanupWorld.setBlock(s, 1, 6, 10, "chair", "red");
+		CleanupWorld.setBlock(s, 1, 6, 10, "basket", "red");
 		CleanupWorld.setBlock(s, 2, 2, 10, "bag", "magenta");
 
 		return s;
