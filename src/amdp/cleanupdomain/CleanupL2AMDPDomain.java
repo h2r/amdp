@@ -63,16 +63,16 @@ public class CleanupL2AMDPDomain implements DomainGenerator {
 		new BlockToRoomAction(CleanupL1AMDPDomain.ACTION_BLOCK_TO_ROOM, domain);
 
 
-		StateMapping sm = new stateMapperL2(domain);
+		StateMapping sm = new StateMapperL2(domain);
 		((FullyObservableSingleAgentAMDPDomain)domain).setStateMapper(sm);
 		
 		return domain;
 	}
 	
-	public class stateMapperL2 implements StateMapping{
+	public class StateMapperL2 implements StateMapping{
 
 		private Domain d;
-		public stateMapperL2(Domain dIn){
+		public StateMapperL2(Domain dIn){
 			super();
 			d = dIn;
 		}

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import burlap.oomdp.core.Domain;
 import burlap.oomdp.core.TerminalFunction;
 import burlap.oomdp.core.states.State;
 
@@ -19,6 +20,7 @@ public abstract class AMDPSimpleAction extends SimpleAction{
 		public SimpleGroundedAMDPAction(Action inputAction){
 			super(inputAction);
 		}
+		
 
 		
 		@Override
@@ -37,6 +39,14 @@ public abstract class AMDPSimpleAction extends SimpleAction{
 		public TerminalFunction getTF() {
 			return ((AMDPSimpleAction)this.action).getTF();
 		}
+	}
+	
+	public AMDPSimpleAction() {
+		
+	}
+	
+	public AMDPSimpleAction(String name, Domain domain){
+		super(name, domain);
 	}
 	
 	public abstract RewardFunction getRF();

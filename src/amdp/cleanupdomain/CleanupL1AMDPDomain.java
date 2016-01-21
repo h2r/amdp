@@ -105,16 +105,16 @@ public class CleanupL1AMDPDomain implements DomainGenerator {
 		new BlockToRegion(ACTION_BLOCK_TO_DOOR, domain, new String[]{CleanupWorld.CLASS_BLOCK, CleanupWorld.CLASS_DOOR}, this.lockProb, l0);
 
 		
-		StateMapping sm = new stateMapperL1(domain);
+		StateMapping sm = new StateMapperL1(domain);
 		((FullyObservableSingleAgentAMDPDomain)domain).setStateMapper(sm);
 		
 		return domain;
 	}
 
-	public class stateMapperL1 implements StateMapping{
+	public class StateMapperL1 implements StateMapping{
 
 		private Domain d;
-		public stateMapperL1(Domain dIn){
+		public StateMapperL1(Domain dIn){
 			super();
 			d = dIn;
 		}

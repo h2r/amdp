@@ -100,7 +100,7 @@ public class AMDPAgent{
 		
 		
 		
-		decompose(env, 2, rf, tf, maxSteps, ea);
+		decompose(env, DomainList.size()-1, rf, tf, maxSteps, ea);
 		
 		
 		return ea;
