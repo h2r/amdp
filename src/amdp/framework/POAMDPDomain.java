@@ -6,6 +6,7 @@ import burlap.oomdp.singleagent.pomdp.PODomain;
 public class POAMDPDomain extends PODomain implements AMDPDomain{
 
 	protected StateMapping stateMapper;
+	
 
 	@Override
 	public StateMapping getStateMapper() {

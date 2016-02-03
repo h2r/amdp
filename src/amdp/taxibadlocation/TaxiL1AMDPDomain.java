@@ -1,4 +1,4 @@
-package amdp.taxi;
+package amdp.taxibadlocation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +41,6 @@ public class TaxiL1AMDPDomain implements DomainGenerator {
 	public static final String								INTAXIATT = "inTaxiAtt";
 	public static final String								OCCUPIEDTAXIATT = "occupiedTaxiAtt";
 	public static final String								LOCATIONATT = "locationAtt";
-	public static final String								GOALLOCATIONATT = "goalLocationAtt";
 
 	public static final String								TAXICLASS = "taxi1L";
 	public static final String								LOCATIONCLASS = "location1L";
@@ -50,7 +49,6 @@ public class TaxiL1AMDPDomain implements DomainGenerator {
 	//	public static final String								TAXIATLOCATIONPF = "taxiAt";
 	public static final String								PASSENGERATLOCATIONPF = "passengerAt";
 	public static final String								TAXIATPASSENGERPF = "taxiAtPassenger";
-	public static final String								PASSENGERATGOALLOCATIONPF = "passengerAtGoal";
 	public static final String								PASSENGERINTAXI = "inTaxi";
 
 	public static final String								PICKUPACTION = "pickup";
@@ -84,18 +82,6 @@ public class TaxiL1AMDPDomain implements DomainGenerator {
 		locationTypes.add("cyan");
 		locationTypes.add("onRoad");
 		locationAtt.setDiscValues(locationTypes);
-		
-		Attribute goalLocationAtt = new Attribute(domain, GOALLOCATIONATT, Attribute.AttributeType.DISC);
-		List<String> goalLocationTypes = new ArrayList<String>();
-		goalLocationTypes.add("red");
-		goalLocationTypes.add("green");
-		goalLocationTypes.add("blue");
-		goalLocationTypes.add("yellow");
-		goalLocationTypes.add("magenta");
-		goalLocationTypes.add("pink");
-		goalLocationTypes.add("orange");
-		goalLocationTypes.add("cyan");
-		goalLocationAtt.setDiscValues(goalLocationTypes);
 
 		ObjectClass taxi = new ObjectClass(domain, TAXICLASS);
 		taxi.addAttribute(locationAtt);
@@ -106,7 +92,6 @@ public class TaxiL1AMDPDomain implements DomainGenerator {
 
 		ObjectClass passenger = new ObjectClass(domain, PASSENGERCLASS);
 		passenger.addAttribute(locationAtt);
-		passenger.addAttribute(goalLocationAtt);
 		passenger.addAttribute(inTaxiAtt);
 
 		new PutDownAction(PUTDOWNACTION, domain);
@@ -116,7 +101,6 @@ public class TaxiL1AMDPDomain implements DomainGenerator {
 
 		new PF_PassengerInTaxi(TAXIATPASSENGERPF, domain, new String[]{PASSENGERCLASS});
 		new PF_PassengerInLocation(PASSENGERATLOCATIONPF, domain, new String[]{PASSENGERCLASS, LOCATIONCLASS});
-		new PF_PassengerInGoalLocation(PASSENGERATLOCATIONPF, domain, new String[]{PASSENGERCLASS});
 
 
 		StateMapping sm = new StateMapperL1(domain);
@@ -357,33 +341,6 @@ public class TaxiL1AMDPDomain implements DomainGenerator {
 		}
 	}
 
-	
-	public class PF_PassengerInGoalLocation extends PropositionalFunction{
-
-		public PF_PassengerInGoalLocation(String name, Domain domain, String [] params){
-			super(name, domain, params);
-		}
-
-		@Override
-		public boolean isTrue(State s, String[] params) {
-			//			ObjectInstance taxi = s.getFirstObjectOfClass(TAXICLASS);
-			//			boolean taxiOccupied = taxi.getBooleanValForAttribute(OCCUPIEDTAXIATT);
-
-			
-
-			boolean returnValue = false;
-			ObjectInstance passenger = s.getObject(params[0]);
-			int pLocation = passenger.getIntValForAttribute(LOCATIONATT);
-			int gLocation = passenger.getIntValForAttribute(GOALLOCATIONATT);
-			boolean inTaxi = passenger.getBooleanValForAttribute(INTAXIATT);
-			if(gLocation==pLocation && !inTaxi){
-				returnValue = true;
-			}
-
-			return returnValue;
-		}
-	}
-
 
 	public static State getMappedState(State s, Domain cd){
 
@@ -419,20 +376,7 @@ public class TaxiL1AMDPDomain implements DomainGenerator {
 		List<ObjectInstance> passengers = s.getObjectsOfClass(TaxiDomain.PASSENGERCLASS);
 		for(ObjectInstance p : passengers){
 			ObjectInstance ap = new MutableObjectInstance(cd.getObjectClass(PASSENGERCLASS), p.getName());
-			int xp = p.getIntValForAttribute(TaxiDomain.XATT);
-			int yp = p.getIntValForAttribute(TaxiDomain.YATT);
-			ap.setValue(LOCATIONATT, 9);
-			for(ObjectInstance l : locations){
-				int xl = l.getIntValForAttribute(TaxiDomain.XATT);
-				int yl = l.getIntValForAttribute(TaxiDomain.YATT);
-				if(xl==xp && yl==yp){
-					ap.setValue(LOCATIONATT, l.getIntValForAttribute(TaxiDomain.LOCATIONATT));
-					break;
-				}
-			}
-			
-			
-			ap.setValue(GOALLOCATIONATT, p.getIntValForAttribute(TaxiDomain.GOALLOCATIONATT));
+			ap.setValue(LOCATIONATT, p.getIntValForAttribute(TaxiDomain.LOCATIONATT));
 			ap.setValue(INTAXIATT, p.getIntValForAttribute(TaxiDomain.INTAXIATT));
 			as.addObject(ap);
 		}
@@ -459,19 +403,21 @@ public class TaxiL1AMDPDomain implements DomainGenerator {
 		}
 	}
 
-	public static class InGoalLocationSC implements StateConditionTest{
+	public static class InLocationSC implements StateConditionTest{
 
 		String srcOb;
+		String targetOb;
 
-		public InGoalLocationSC(String srcOb) {
+		public InLocationSC(String srcOb, String targetOb) {
 			this.srcOb = srcOb;
+			this.targetOb = targetOb;
 		}
 
 		@Override
 		public boolean satisfies(State s) {
 			ObjectInstance src = s.getObject(this.srcOb);
 			boolean inTaxi = src.getBooleanValForAttribute(INTAXIATT);
-			return src.getStringValForAttribute(LOCATIONATT).equals(src.getStringValForAttribute(GOALLOCATIONATT)) && !inTaxi;
+			return src.getStringValForAttribute(LOCATIONATT).equals(targetOb) && !inTaxi;
 		}
 	}
 
@@ -485,11 +431,11 @@ public class TaxiL1AMDPDomain implements DomainGenerator {
 		Domain d1 = d1Gen.generateDomain();
 		State as = TaxiL1AMDPDomain.getMappedState(s, d1);
 
-		StateConditionTest sc = new InGoalLocationSC("passenger0");
+		StateConditionTest sc = new InLocationSC("passenger0", "yellow");
 		RewardFunction rf = new GoalBasedRF(sc, 1.);
 		TerminalFunction tf = new GoalConditionTF(sc);
 
-//		PropositionalFunction pfTest = d1.getPropFunction(TAXIATPASSENGERPF);
+		PropositionalFunction pfTest = d1.getPropFunction(TAXIATPASSENGERPF);
 		
 		ValueIteration vi = new ValueIteration(d1, rf, tf, 0.99, new SimpleHashableStateFactory(false), 0.01, 100);
 		Policy p = vi.planFromState(as);
@@ -501,8 +447,8 @@ public class TaxiL1AMDPDomain implements DomainGenerator {
 			String[] params = new String[1];
 			params[0] = "passenger0";
 
-//			boolean test = pfTest.isTrue(ea.getState(i), params);
-//			System.out.println(test);
+			boolean test = pfTest.isTrue(ea.getState(i), params);
+			System.out.println(test);
 		}
 
 

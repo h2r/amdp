@@ -1,4 +1,4 @@
-package amdp.taxi;
+package amdp.taxibadlocation;
 
 import burlap.oomdp.auxiliary.DomainGenerator;
 import burlap.oomdp.core.Attribute;
@@ -32,9 +32,7 @@ public class TaxiDomain implements DomainGenerator{
 	public static final String								WALLMAXATT = "wallMaxAtt";
 	public static final String								WALLOFFSETATT = "wallOffsetAtt";
 
-	// this is the current location attribute
 	public static final String								LOCATIONATT = "locationAtt";
-	public static final String								GOALLOCATIONATT = "goalLocationAtt";
 
 	public static final String								BEENPICKEDUPATT = "beenPickedupAtt";
 
@@ -122,19 +120,6 @@ public class TaxiDomain implements DomainGenerator{
 		locationTypes.add("cyan");
 		locationAtt.setDiscValues(locationTypes);
 
-
-		Attribute goalLocationAtt = new Attribute(domain, GOALLOCATIONATT, Attribute.AttributeType.DISC);
-		List<String> goalLocationTypes = new ArrayList<String>();
-		goalLocationTypes.add("red");
-		goalLocationTypes.add("green");
-		goalLocationTypes.add("blue");
-		goalLocationTypes.add("yellow");
-		goalLocationTypes.add("magenta");
-		goalLocationTypes.add("pink");
-		goalLocationTypes.add("orange");
-		goalLocationTypes.add("cyan");
-		goalLocationAtt.setDiscValues(goalLocationTypes);
-
 		Attribute beenPickedupAtt = null;
 		if(this.includePickedup){
 			beenPickedupAtt = new Attribute(domain, BEENPICKEDUPATT, Attribute.AttributeType.BOOLEAN);
@@ -156,8 +141,8 @@ public class TaxiDomain implements DomainGenerator{
 		ObjectClass passenger = new ObjectClass(domain, PASSENGERCLASS);
 		passenger.addAttribute(xAtt);
 		passenger.addAttribute(yAtt);
+		passenger.addAttribute(locationAtt);
 		passenger.addAttribute(inTaxiAtt);
-		passenger.addAttribute(goalLocationAtt);
 		if(this.includePickedup){
 			passenger.addAttribute(beenPickedupAtt);
 		}
@@ -229,7 +214,7 @@ public class TaxiDomain implements DomainGenerator{
 			setLocation(s, 4, 2, 1, 0);
 		}
 
-		setPassenger(s, 0, 3, 0, 1);
+		setPassenger(s, 0, 3, 0, 3);
 
 		setHWall(s, 0, 0, 5, 0);
 		setHWall(s, 1, 0, 5, 5);
@@ -278,7 +263,7 @@ public class TaxiDomain implements DomainGenerator{
 		ObjectInstance p = s.getObjectsOfClass(PASSENGERCLASS).get(i);
 		p.setValue(XATT, x);
 		p.setValue(YATT, y);
-		p.setValue(GOALLOCATIONATT, lt);
+		p.setValue(LOCATIONATT, lt);
 		p.setValue(INTAXIATT, 0);
 		if(p.getObjectClass().domain.getAction(BEENPICKEDUPATT) != null){
 			p.setValue(BEENPICKEDUPATT, 0);
@@ -360,19 +345,19 @@ public class TaxiDomain implements DomainGenerator{
 			}
 		}
 
-		//		boolean locationUpdate = false;
-		//		int location = 0;
-		//
-		//		List<ObjectInstance> locations = s.getObjectsOfClass(LOCATIONCLASS);
-		//		for(ObjectInstance l : locations){
-		//			int xl = l.getIntValForAttribute(XATT);
-		//			int yl = l.getIntValForAttribute(YATT);
-		//			if(xl==nx && yl==ny){
-		//				locationUpdate = true;
-		//				location  = l.getIntValForAttribute(LOCATIONATT);
-		//				break;
-		//			}
-		//		}
+		boolean locationUpdate = false;
+		int location = 0;
+
+		List<ObjectInstance> locations = s.getObjectsOfClass(LOCATIONCLASS);
+		for(ObjectInstance l : locations){
+			int xl = l.getIntValForAttribute(XATT);
+			int yl = l.getIntValForAttribute(YATT);
+			if(xl==nx && yl==ny){
+				locationUpdate = true;
+				location  = l.getIntValForAttribute(LOCATIONATT);
+				break;
+			}
+		}
 
 
 		taxi.setValue(XATT, nx);
@@ -386,9 +371,8 @@ public class TaxiDomain implements DomainGenerator{
 			if(inTaxi == 1){
 				p.setValue(XATT, nx);
 				p.setValue(YATT, ny);
-				//				if(locationUpdate){ 
-				//					p.setValue(LOCATIONATT, location);			
-				//				}
+				if(locationUpdate){ 
+					p.setValue(LOCATIONATT, location);				}
 			}
 		}
 
@@ -608,7 +592,7 @@ public class TaxiDomain implements DomainGenerator{
 		@Override
 		public boolean isTrue(State s, String[] params) {
 			ObjectInstance p = s.getObject(params[0]);
-			//			System.out.println(params[0]);
+//			System.out.println(params[0]);
 			int xp = p.getIntValForAttribute(XATT);
 			int yp = p.getIntValForAttribute(YATT);
 			boolean inTaxi = p.getBooleanValForAttribute(INTAXIATT);
@@ -617,7 +601,7 @@ public class TaxiDomain implements DomainGenerator{
 			boolean returnValue = false;
 			List<ObjectInstance> locations = s.getObjectsOfClass(LOCATIONCLASS);
 			for(ObjectInstance location : locations){
-				//				System.out.println("in taxi domain: " +location.getName());
+//				System.out.println("in taxi domain: " +location.getName());
 				if(location.getName().equals(params[1])){
 					int xl = location.getIntValForAttribute(XATT);
 					int yl = location.getIntValForAttribute(YATT);

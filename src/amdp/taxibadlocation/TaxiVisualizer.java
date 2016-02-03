@@ -1,4 +1,4 @@
-package amdp.taxi;
+package amdp.taxibadlocation;
 
 import burlap.oomdp.core.objects.ObjectInstance;
 import burlap.oomdp.core.states.State;
@@ -226,7 +226,7 @@ public class TaxiVisualizer {
 		@Override
 		public void paintObject(Graphics2D g2, State s, ObjectInstance ob, float cWidth, float cHeight) {
 
-			int type = ob.getIntValForAttribute(TaxiDomain.GOALLOCATIONATT);
+			int type = ob.getIntValForAttribute(TaxiDomain.LOCATIONATT);
 
 			Color col = this.baseColors.get(type);
 

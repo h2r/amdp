@@ -1,13 +1,16 @@
-package amdp.taxi;
+package amdp.taxibadlocation;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-
+import amdp.cleanupdomain.CleanupDomainDriver.L0Goal;
+import amdp.cleanupdomain.CleanupDomainDriver.l0PolicyGenerator;
+import amdp.cleanupdomain.CleanupDomainDriver.l1PolicyGenerator;
+import amdp.cleanupdomain.CleanupDomainDriver.l2PolicyGenerator;
 import amdp.framework.AMDPAgent;
 import amdp.framework.AMDPPolicyGenerator;
-import amdp.taxi.TaxiL2AMDPDomain.InLocationSC;
+import amdp.taxibadlocation.TaxiL2AMDPDomain.InLocationSC;
 import burlap.behavior.policy.Policy;
 import burlap.behavior.singleagent.EpisodeAnalysis;
 import burlap.behavior.singleagent.auxiliary.EpisodeSequenceVisualizer;
@@ -59,7 +62,7 @@ public class TaxiDomainDriver {
 		State as2 = TaxiL2AMDPDomain.getMappedState(as, d2);
 
 		
-		StateConditionTest l2sc = new InLocationSC("passenger0");
+		StateConditionTest l2sc = new InLocationSC("passenger0", "yellow");
 		RewardFunction rfl2 = new GoalBasedRF(l2sc, 1.);
 		TerminalFunction tfl2 = new GoalConditionTF(l2sc);
 		
