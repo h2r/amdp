@@ -1000,7 +1000,7 @@ public class CleanupWorld implements DomainGenerator{
 			System.out.println("total time: " + duration);
 			EpisodeAnalysis ea = P.evaluateBehavior(env);
 			
-			Visualizer v = CleanupVisualizer.getVisualizer("amdp/data/resources/robotImages");
+			Visualizer v = CleanupVisualizer.getVisualizer("data/resources/robotImages");
 			//		System.out.println(ea.getState(0).toString());
 			new EpisodeSequenceVisualizer(v, domain, Arrays.asList(ea));
 		}
