@@ -54,6 +54,8 @@ public class CleanupL2AMDPDomain implements DomainGenerator {
 		ObjectClass room = new ObjectClass(domain, CleanupWorld.CLASS_ROOM);
 		room.addAttribute(colAtt);
 
+		ObjectClass door = new ObjectClass(domain, CleanupWorld.CLASS_DOOR);
+
 		ObjectClass block = new ObjectClass(domain, CleanupWorld.CLASS_BLOCK);
 		block.addAttribute(inRegion);
 		block.addAttribute(colAtt);
@@ -61,6 +63,8 @@ public class CleanupL2AMDPDomain implements DomainGenerator {
 
 		new AgentToRoomAction(CleanupL1AMDPDomain.ACTION_AGENT_TO_ROOM, domain);
 		new BlockToRoomAction(CleanupL1AMDPDomain.ACTION_BLOCK_TO_ROOM, domain);
+		new AgentToDoorAction(CleanupL1AMDPDomain.ACTION_AGENT_TO_DOOR, domain);
+		new BlockToDoorAction(CleanupL1AMDPDomain.ACTION_BLOCK_TO_DOOR, domain);
 
 
 		StateMapping sm = new StateMapperL2(domain);
@@ -101,20 +105,29 @@ public class CleanupL2AMDPDomain implements DomainGenerator {
 			roomNames.add(r.getName());
 		}
 
+		List<ObjectInstance> doors = s.getObjectsOfClass(CleanupWorld.CLASS_DOOR);
+		Set<String> doorNames = new HashSet<String>(doors.size());
+		for(ObjectInstance d : doors){
+			ObjectInstance ad = new MutableObjectInstance(aDomain.getObjectClass(CleanupWorld.CLASS_DOOR), d.getName());
+			as.addObject(ad);
+
+			doorNames.add(d.getName());
+		}
+
 		List<ObjectInstance> blocks = s.getObjectsOfClass(CleanupWorld.CLASS_BLOCK);
 		for(ObjectInstance b : blocks){
 			ObjectInstance ab = new MutableObjectInstance(aDomain.getObjectClass(CleanupWorld.CLASS_BLOCK), b.getName());
 			ab.setValue(CleanupWorld.ATT_COLOR, b.getIntValForAttribute(CleanupWorld.ATT_COLOR));
 			ab.setValue(CleanupWorld.ATT_SHAPE, b.getIntValForAttribute(CleanupWorld.ATT_SHAPE));
 			String sourceRegion = b.getStringValForAttribute(CleanupL1AMDPDomain.ATT_IN_REGION);
-			if(roomNames.contains(sourceRegion)){
+			if(roomNames.contains(sourceRegion) || doorNames.contains(sourceRegion)){
 				ab.addRelationalTarget(CleanupL1AMDPDomain.ATT_IN_REGION, sourceRegion);
 			}
 			as.addObject(ab);
 		}
 
 		ObjectInstance agent = s.getFirstObjectOfClass(CleanupWorld.CLASS_AGENT);
-		if(roomNames.contains(agent.getStringValForAttribute(CleanupL1AMDPDomain.ATT_IN_REGION))){
+		if(roomNames.contains(agent.getStringValForAttribute(CleanupL1AMDPDomain.ATT_IN_REGION)) || doorNames.contains(agent.getStringValForAttribute(CleanupL1AMDPDomain.ATT_IN_REGION))){
 			aagent.addRelationalTarget(CleanupL1AMDPDomain.ATT_IN_REGION, agent.getStringValForAttribute(CleanupL1AMDPDomain.ATT_IN_REGION));
 		}
 
@@ -137,6 +150,59 @@ public class CleanupL2AMDPDomain implements DomainGenerator {
 			ObjectParameterizedAMDPGroundedAction oga = (ObjectParameterizedAMDPGroundedAction)groundedAction;
 			String curRoom = s.getFirstObjectOfClass(CleanupWorld.CLASS_AGENT).getStringValForAttribute(CleanupL1AMDPDomain.ATT_IN_REGION);
 			if(!curRoom.equals(oga.params[0])){
+				return true;
+			}
+			return false;
+		}
+
+		@Override
+		public boolean isPrimitive() {
+			return true;
+		}
+
+		@Override
+		protected State performActionHelper(State s, GroundedAction groundedAction) {
+
+			ObjectParameterizedAMDPGroundedAction oga = (ObjectParameterizedAMDPGroundedAction)groundedAction;
+			ObjectInstance agent = s.getFirstObjectOfClass(CleanupWorld.CLASS_AGENT);
+			agent.addRelationalTarget(CleanupL1AMDPDomain.ATT_IN_REGION, oga.params[0]);
+
+			return s;
+		}
+
+
+		@Override
+		public List<TransitionProbability> getTransitions(State s, GroundedAction groundedAction) {
+			return this.deterministicTransition(s, groundedAction);
+		}
+
+		@Override
+		public RewardFunction getRF(ObjectParameterizedAMDPGroundedAction ga) {
+			return getL1Rf(ga);
+		}
+
+		@Override
+		public TerminalFunction getTF(ObjectParameterizedAMDPGroundedAction ga) {
+			return getL1Tf(ga);
+		}
+	}
+
+	public static class AgentToDoorAction extends ObjectParameterizedAMDPAction implements FullActionModel{
+
+		public AgentToDoorAction(String name, Domain domain) {
+			super(name, domain, new String[]{CleanupWorld.CLASS_DOOR});
+		}
+
+		@Override
+		public boolean parametersAreObjectIdentifierIndependent() {
+			return false;
+		}
+
+		@Override
+		public boolean applicableInState(State s, GroundedAction groundedAction) {
+			ObjectParameterizedAMDPGroundedAction oga = (ObjectParameterizedAMDPGroundedAction)groundedAction;
+			String curDoor = s.getFirstObjectOfClass(CleanupWorld.CLASS_AGENT).getStringValForAttribute(CleanupL1AMDPDomain.ATT_IN_REGION);
+			if(!curDoor.equals(oga.params[0])){
 				return true;
 			}
 			return false;
@@ -229,11 +295,66 @@ public class CleanupL2AMDPDomain implements DomainGenerator {
 		}
 	}
 	
+	public static class BlockToDoorAction extends ObjectParameterizedAMDPAction implements FullActionModel{
+
+		public BlockToDoorAction(String name, Domain domain) {
+			super(name, domain, new String[]{CleanupWorld.CLASS_BLOCK, CleanupWorld.CLASS_DOOR});
+		}
+
+		@Override
+		public boolean parametersAreObjectIdentifierIndependent() {
+			return false;
+		}
+
+		@Override
+		public boolean applicableInState(State s, GroundedAction groundedAction) {
+			ObjectParameterizedAMDPGroundedAction oga = (ObjectParameterizedAMDPGroundedAction)groundedAction;
+			String curDoor = s.getObject(oga.params[0]).getStringValForAttribute(CleanupL1AMDPDomain.ATT_IN_REGION);
+			if(!curDoor.equals(oga.params[1])){
+				return true;
+			}
+			return false;
+		}
+
+		@Override
+		public boolean isPrimitive() {
+			return true;
+		}
+
+		@Override
+		protected State performActionHelper(State s, GroundedAction groundedAction) {
+
+			ObjectParameterizedAMDPGroundedAction oga = (ObjectParameterizedAMDPGroundedAction)groundedAction;
+			ObjectInstance agent = s.getFirstObjectOfClass(CleanupWorld.CLASS_AGENT);
+			ObjectInstance block = s.getObject(oga.params[0]);
+			agent.clearRelationalTargets(CleanupL1AMDPDomain.ATT_IN_REGION);
+			block.addRelationalTarget(CleanupL1AMDPDomain.ATT_IN_REGION, oga.params[1]);
+
+			return s;
+		}
+
+
+		@Override
+		public List<TransitionProbability> getTransitions(State s, GroundedAction groundedAction) {
+			return this.deterministicTransition(s, groundedAction);
+		}
+
+		@Override
+		public RewardFunction getRF(ObjectParameterizedAMDPGroundedAction ga) {
+			return getL1Rf(ga);
+		}
+
+		@Override
+		public TerminalFunction getTF(ObjectParameterizedAMDPGroundedAction ga) {
+			return getL1Tf(ga);
+		}
+	}
+	
 	public static RewardFunction getL1Rf(GroundedAction l2Action){
 		ObjectParameterizedAMDPAction.ObjectParameterizedAMDPGroundedAction oga = (ObjectParameterizedAMDPAction.ObjectParameterizedAMDPGroundedAction)l2Action;
 		StateConditionTest sc = null;
-		if(l2Action.actionName().equals(CleanupL1AMDPDomain.ACTION_AGENT_TO_ROOM)){
-			sc = new CleanupL1AMDPDomain.InRegionSC(CleanupWorld.CLASS_AGENT+0, oga.params[0]);
+		if(l2Action.actionName().equals(CleanupL1AMDPDomain.ACTION_AGENT_TO_ROOM) || l2Action.actionName().equals(CleanupL1AMDPDomain.ACTION_AGENT_TO_DOOR)){
+			sc = new CleanupL1AMDPDomain.InRegionSC(CleanupWorld.CLASS_AGENT, oga.params[0]);
 		}
 		else{
 			sc = new CleanupL1AMDPDomain.InRegionSC(oga.params[0], oga.params[1]);
@@ -245,8 +366,8 @@ public class CleanupL2AMDPDomain implements DomainGenerator {
 	protected static TerminalFunction getL1Tf(GroundedAction l2Action){
 		ObjectParameterizedAMDPAction.ObjectParameterizedAMDPGroundedAction oga = (ObjectParameterizedAMDPAction.ObjectParameterizedAMDPGroundedAction)l2Action;
 		StateConditionTest sc = null;
-		if(l2Action.actionName().equals(CleanupL1AMDPDomain.ACTION_AGENT_TO_ROOM)){
-			sc = new CleanupL1AMDPDomain.InRegionSC(CleanupWorld.CLASS_AGENT + 0, oga.params[0]);
+		if(l2Action.actionName().equals(CleanupL1AMDPDomain.ACTION_AGENT_TO_ROOM) || l2Action.actionName().equals(CleanupL1AMDPDomain.ACTION_AGENT_TO_DOOR)){
+			sc = new CleanupL1AMDPDomain.InRegionSC(CleanupWorld.CLASS_AGENT, oga.params[0]);
 		}
 		else{
 			sc = new DoorLockedSC(oga.params[1], new CleanupL1AMDPDomain.InRegionSC(oga.params[0], oga.params[1]));
