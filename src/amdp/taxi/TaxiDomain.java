@@ -56,7 +56,7 @@ public class TaxiDomain implements DomainGenerator{
 
 
 	public static final String								TAXIATLOCATIONPF = "taxiAt";
-	public static final String								PASSENGERATLOCATIONPF = "passengerAt";
+	public static final String								PASSENGERATGOALLOCATIONPF = "passengerAtGoal";
 	public static final String								TAXIATPASSENGERPF = "taxiAtPassenger";
 	public static final String								WALLNORTHPF = "wallNorth";
 	public static final String								WALLSOUTHPF = "wallSouth";
@@ -185,7 +185,7 @@ public class TaxiDomain implements DomainGenerator{
 		}
 
 		new PF_TaxiAtLoc(TAXIATLOCATIONPF, domain, new String[]{LOCATIONCLASS});
-		new PF_PassengerAtLoc(PASSENGERATLOCATIONPF, domain, new String[]{PASSENGERCLASS, LOCATIONCLASS});
+		new PF_PassengerAtLoc(PASSENGERATGOALLOCATIONPF, domain, new String[]{PASSENGERCLASS});
 		new PF_PickUp(PASSENGERPICKUPPF, domain, new String[]{});
 		new PF_PutDown(PASSENGERPUTDOWNPF, domain, new String[]{});
 
@@ -243,6 +243,58 @@ public class TaxiDomain implements DomainGenerator{
 		return s;
 
 	}
+	
+	public static State getComplexState(Domain domain){
+		State s = new MutableState();
+
+		ObjectInstance taxi = new MutableObjectInstance(domain.getObjectClass(TAXICLASS), "taxi");
+		s.addObject(taxi);
+
+		boolean usesFuel = domain.getAttribute(FUELATT) != null;
+
+		if(usesFuel){
+			addNInstances(domain, s, LOCATIONCLASS, 5);
+		}
+		else{
+			addNInstances(domain, s, LOCATIONCLASS, 4);
+		}
+
+		addNInstances(domain, s, PASSENGERCLASS, 2);
+		addNInstances(domain, s, HWALLCLASS, 2);
+		addNInstances(domain, s, VWALLCLASS, 5);
+
+		if(usesFuel){
+			setTaxi(s, 0, 3, 12);
+		}
+		else{
+			setTaxi(s, 0, 3);
+		}
+
+		setLocation(s, 0, 0, 0, 4);
+		setLocation(s, 1, 0, 4, 1);
+		setLocation(s, 2, 3, 0, 3);
+		setLocation(s, 3, 4, 4, 2);
+
+		if(usesFuel){
+			setLocation(s, 4, 2, 1, 0);
+		}
+
+		setPassenger(s, 0, 3, 0, 1);
+		setPassenger(s, 1, 0, 0, 2);
+
+		setHWall(s, 0, 0, 5, 0);
+		setHWall(s, 1, 0, 5, 5);
+
+		setVWall(s, 0, 0, 5, 0);
+		setVWall(s, 1, 0, 5, 5);
+		setVWall(s, 2, 0, 2, 1);
+		setVWall(s, 3, 3, 5, 2);
+		setVWall(s, 4, 0, 2, 3);
+
+		return s;
+
+	}
+	
 
 	protected static void addNInstances(Domain domain, State s, String className, int n){
 		ObjectClass oc = domain.getObjectClass(className);
@@ -612,13 +664,14 @@ public class TaxiDomain implements DomainGenerator{
 			int xp = p.getIntValForAttribute(XATT);
 			int yp = p.getIntValForAttribute(YATT);
 			boolean inTaxi = p.getBooleanValForAttribute(INTAXIATT);
+			String goalLocation = p.getStringValForAttribute(GOALLOCATIONATT);
 			// params here are the name of a location like Location 1
 
 			boolean returnValue = false;
 			List<ObjectInstance> locations = s.getObjectsOfClass(LOCATIONCLASS);
 			for(ObjectInstance location : locations){
 				//				System.out.println("in taxi domain: " +location.getName());
-				if(location.getName().equals(params[1])){
+				if(location.getStringValForAttribute(LOCATIONATT).equals(goalLocation)){
 					int xl = location.getIntValForAttribute(XATT);
 					int yl = location.getIntValForAttribute(YATT);
 					if(xp==xl && yp==yl && !inTaxi ){

@@ -31,6 +31,7 @@ import burlap.oomdp.singleagent.GroundedAction;
 import burlap.oomdp.singleagent.RewardFunction;
 import burlap.oomdp.singleagent.common.GoalBasedRF;
 import burlap.oomdp.statehashing.SimpleHashableStateFactory;
+import amdp.framework.GroundedPropSC;
 
 public class TaxiL1AMDPDomain implements DomainGenerator {
 
@@ -300,7 +301,6 @@ public class TaxiL1AMDPDomain implements DomainGenerator {
 
 	}
 
-	//TODO: prop function to check if passenger picked by taxi
 	public class PF_PassengerInTaxi extends PropositionalFunction{
 
 		public PF_PassengerInTaxi(String name, Domain domain, String [] params){
@@ -328,7 +328,6 @@ public class TaxiL1AMDPDomain implements DomainGenerator {
 	}
 
 
-	//TODO: prop function to check if passenger at location
 	public class PF_PassengerInLocation extends PropositionalFunction{
 
 		public PF_PassengerInLocation(String name, Domain domain, String [] params){
@@ -442,22 +441,6 @@ public class TaxiL1AMDPDomain implements DomainGenerator {
 		return as;
 	}
 
-	public static class GroundedPropSC implements StateConditionTest{
-
-		public GroundedProp gp;
-
-		public GroundedPropSC(GroundedProp gp) {
-			this.gp = gp;
-		}
-
-		@Override
-		public boolean satisfies(State s) {
-			//			if(gp.isTrue(s)){
-			//				System.out.println("goal!!");
-			//			}
-			return gp.isTrue(s);
-		}
-	}
 
 	public static class InGoalLocationSC implements StateConditionTest{
 

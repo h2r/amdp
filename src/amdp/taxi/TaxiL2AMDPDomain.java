@@ -5,7 +5,7 @@ import java.util.List;
 
 import amdp.framework.FullyObservableSingleAgentAMDPDomain;
 import amdp.framework.ObjectParameterizedAMDPAction;
-import amdp.taxi.TaxiL1AMDPDomain.GroundedPropSC;
+import amdp.framework.GroundedPropSC;
 import burlap.behavior.policy.Policy;
 import burlap.behavior.singleagent.EpisodeAnalysis;
 import burlap.behavior.singleagent.planning.stochastic.valueiteration.ValueIteration;
@@ -36,7 +36,7 @@ public class TaxiL2AMDPDomain implements DomainGenerator {
 	// problem at this level - get to the red location
 
 	//TODO: locations do not change in the passengers at the base level need to fix that
-	
+
 
 	public static final String								INTAXIATT = "inTaxiAtt";
 	//	public static final String								OCCUPIEDTAXIATT = "occupiedTaxiAtt";
@@ -48,8 +48,8 @@ public class TaxiL2AMDPDomain implements DomainGenerator {
 	public static final String								PASSENGERCLASS = "passenger2L";
 
 	//	public static final String								TAXIATLOCATIONPF = "taxiAt";
-//	public static final String								PASSENGERATLOCATIONPF = "passengerAt";
-//	public static final String								TAXIATPASSENGERPF = "taxiAtPassenger";
+	//	public static final String								PASSENGERATLOCATIONPF = "passengerAt";
+	//	public static final String								TAXIATPASSENGERPF = "taxiAtPassenger";
 	public static final String								PASSENGERINTAXI = "inTaxi";
 
 	public static final String								GETACTION = "getAction";
@@ -84,8 +84,8 @@ public class TaxiL2AMDPDomain implements DomainGenerator {
 		locationTypes.add("cyan");
 		locationTypes.add("onRoad");
 		locationAtt.setDiscValues(locationTypes);
-		
-		
+
+
 		Attribute goalLocationAtt = new Attribute(domain, GOALLOCATIONATT, Attribute.AttributeType.DISC);
 		List<String> goalLocationTypes = new ArrayList<String>();
 		goalLocationTypes.add("red");
@@ -159,7 +159,7 @@ public class TaxiL2AMDPDomain implements DomainGenerator {
 			as.addObject(ap);
 		}
 
-//				ObjectInstance taxiC = new MutableObjectInstance(cd.getObjectClass(TAXICLASS), TAXICLASS+0);
+		//				ObjectInstance taxiC = new MutableObjectInstance(cd.getObjectClass(TAXICLASS), TAXICLASS+0);
 
 		ObjectInstance taxi = s.getFirstObjectOfClass(TaxiL1AMDPDomain.TAXICLASS);
 
@@ -186,11 +186,16 @@ public class TaxiL2AMDPDomain implements DomainGenerator {
 			// oga.prams[0] is the name of the passenger - like passenger1
 
 			//			ObjectInstance taxi = s.getFirstObjectOfClass(TAXICLASS);
-			ObjectInstance passenger = s.getObject(oga.params[0]);
-//			int i = passenger.getIntValForAttribute(LOCATIONATT);
+
+			//			int i = passenger.getIntValForAttribute(LOCATIONATT);
 			//			taxi.setValue(LOCATIONATT, i);
 
 			//			taxi.setValue(OCCUPIEDTAXIATT, 1);
+			
+			
+
+
+			ObjectInstance passenger = s.getObject(oga.params[0]);
 			passenger.setValue(INTAXIATT, 1);
 
 
@@ -218,7 +223,12 @@ public class TaxiL2AMDPDomain implements DomainGenerator {
 
 		@Override
 		public boolean applicableInState(State s, GroundedAction groundedAction) {
-			return true;
+			boolean taxiOccupied = false;
+			List<ObjectInstance> passengers = s.getObjectsOfClass(PASSENGERCLASS);
+			for(ObjectInstance passenger : passengers){
+				taxiOccupied = taxiOccupied || passenger.getBooleanValForAttribute(INTAXIATT);
+			}
+			return !taxiOccupied;
 		}
 
 		@Override
@@ -306,20 +316,24 @@ public class TaxiL2AMDPDomain implements DomainGenerator {
 
 	public static class InLocationSC implements StateConditionTest{
 
-		String srcOb;
+		List<String> srcObs;
 
-		public InLocationSC(String srcOb) {
-			this.srcOb = srcOb;
+		public InLocationSC(List<String> srcObs) {
+			this.srcObs = srcObs;
 		}
 
 		@Override
 		public boolean satisfies(State s) {
-//			System.out.println(s.getCompleteStateDescription());
-			ObjectInstance src = s.getObject(this.srcOb);
-			boolean inTaxi = src.getBooleanValForAttribute(INTAXIATT);
-			String goal = src.getStringValForAttribute(GOALLOCATIONATT);
-			String currentLoc = src.getStringValForAttribute(LOCATIONATT);
-			return currentLoc.equals(goal) && !inTaxi;
+			//			System.out.println(s.getCompleteStateDescription());
+			boolean temp = true;
+			for(String srcOb : srcObs){
+				ObjectInstance src = s.getObject(srcOb);
+				boolean inTaxi = src.getBooleanValForAttribute(INTAXIATT);
+				String goal = src.getStringValForAttribute(GOALLOCATIONATT);
+				String currentLoc = src.getStringValForAttribute(LOCATIONATT);
+				temp = temp && currentLoc.equals(goal) && !inTaxi;
+			}
+			return temp;
 		}
 	}
 
@@ -327,20 +341,24 @@ public class TaxiL2AMDPDomain implements DomainGenerator {
 	public static void main(String[] args) {
 		TaxiDomain d0Gen = new TaxiDomain();
 		Domain d0 = d0Gen.generateDomain();
-		State s = TaxiDomain.getClassicState(d0);
+		State s = TaxiDomain.getComplexState(d0);
 
 
 		TaxiL1AMDPDomain d1Gen = new TaxiL1AMDPDomain(d0);
 		Domain d1 = d1Gen.generateDomain();
 		State as = TaxiL1AMDPDomain.getMappedState(s, d1);
-//		System.out.println(as.getCompleteStateDescription());
+		//		System.out.println(as.getCompleteStateDescription());
 
 		TaxiL2AMDPDomain d2Gen = new TaxiL2AMDPDomain(d1);
 		Domain d2 = d2Gen.generateDomain();
 		State as2 = TaxiL2AMDPDomain.getMappedState(as, d2);
-//		System.out.println("in main: " + as2.getCompleteStateDescription());
+		//		System.out.println("in main: " + as2.getCompleteStateDescription());
 
-		StateConditionTest sc = new InLocationSC("passenger0");
+		List<String> passengers  = new ArrayList<String>();
+		passengers.add("passenger0");
+		passengers.add("passenger1");
+
+		StateConditionTest sc = new InLocationSC(passengers);
 		RewardFunction rf = new GoalBasedRF(sc, 1.);
 		TerminalFunction tf = new GoalConditionTF(sc);
 
