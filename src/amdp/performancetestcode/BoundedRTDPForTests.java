@@ -23,7 +23,7 @@ import java.util.*;
  * This is an implementation of BoundedRTDP with limited number of backups. This is specifically useful for running tests on AMDPs 
  * to limit the number of backups for performance comparisons.
  * 
- * An implementation of Bounded RTDP [1]. Bounded RTPD is very similar to standard {@link RTDP} [2] with the main difference
+ * An implementation of Bounded RTDP [1]. Bounded RTPD is very similar to standard {@link burlap.behavior.singleagent.planning.stochastic.rtdp.RTDP} [2] with the main difference
  * being that both an upper bound and lower bound value function is computed. Like RTDP, the upper bound is used for planning rollout
  * exploration, but when planning rollouts are complete, the lower bound value function is used to direct behavior. Using the lower
  * bound provides significantly better any-time planning performance that does not require convergence to get resaonable results.
@@ -149,6 +149,11 @@ public class BoundedRTDPForTests extends DynamicProgramming implements Planner {
 	protected MutableGlobalInteger				remainingBellmanUpdates = new MutableGlobalInteger(-1);
 
 	/**
+	 * Number of Bellman updates when the planner was initialized.
+	 */
+	protected int 								startRemainingBellman = -1;
+
+	/**
 	 * Keeps track of the number of rollout steps that have been performed across all planning rollouts.
 	 */
 	protected int								numSteps = 0;
@@ -200,6 +205,7 @@ public class BoundedRTDPForTests extends DynamicProgramming implements Planner {
 	 */
 	public void setRemainingNumberOfBellmanUpdates(MutableGlobalInteger numUpdates){
 		this.remainingBellmanUpdates = numUpdates;
+		this.startRemainingBellman = numUpdates.getValue();
 	}
 
 	/**
@@ -317,7 +323,7 @@ public class BoundedRTDPForTests extends DynamicProgramming implements Planner {
 
 		HashableState csh = this.hashingFactory.hashState(s);
 
-		while(!this.tf.isTerminal(csh.s) && (trajectory.size() < this.maxDepth+1 || this.maxDepth == -1) && (this.remainingBellmanUpdates.getValue() > 0 || this.remainingBellmanUpdates.getValue() == -1)){
+		while(!this.tf.isTerminal(csh.s) && (trajectory.size() < this.maxDepth+1 || this.maxDepth == -1) && (this.remainingBellmanUpdates.getValue() > 0 || (this.remainingBellmanUpdates.getValue() == -1 && this.startRemainingBellman<0))){
 
 			if(this.runRolloutsInReverse){
 				trajectory.offerFirst(csh);
