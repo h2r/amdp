@@ -34,9 +34,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-//TODO: top level RF, top level TF low level TF for the env.
-//TODO: all the policy generators and all the huristics
-
 
 
 
