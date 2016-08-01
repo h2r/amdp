@@ -24,18 +24,20 @@ public class TaxiPassenger implements ObjectInstance {
     // in the original domain passenger needs to be picked up and dropped at least once for goal condition
     public boolean pickedUpAtLeastOnce;
     public String goalLocation;
+    public String originalSourceLocation;
 
 
     protected String name;
 
 
 
-    private final static List<Object> keys = Arrays.<Object>asList(VAR_X, VAR_Y, VAR_JUSTPICKEDUP, VAR_INTAXI, VAR_GOALLOCATION, VAR_PICKEDUPATLEASTONCE);
+    private final static List<Object> keys = Arrays.<Object>asList(VAR_X, VAR_Y, VAR_JUSTPICKEDUP, VAR_INTAXI, VAR_GOALLOCATION, VAR_PICKEDUPATLEASTONCE ,VAR_ORIGINALSOURCELOCATION);
 
 
 
     public TaxiPassenger(String name, int x, int y,  boolean inTaxi,
-                         boolean justPickedUp, String goalLocation, boolean pickedUpAtleastOnce) {
+                         boolean justPickedUp, String goalLocation,
+                         boolean pickedUpAtleastOnce, String originalSourceLocation) {
         this.x = x;
         this.y = y;
         this.name = name;
@@ -43,15 +45,17 @@ public class TaxiPassenger implements ObjectInstance {
         this.inTaxi = inTaxi;
         this.goalLocation = goalLocation;
         this.pickedUpAtLeastOnce = pickedUpAtleastOnce;
+        this.originalSourceLocation = originalSourceLocation;
     }
 
-    public TaxiPassenger(String name, int x, int y,  String goalLocation) {
+    public TaxiPassenger(String name, int x, int y,  String goalLocation, String originalSourceLocation) {
         this.x = x;
         this.y = y;
         this.name = name;
         this.justPickedUp = false;
         this.inTaxi = false;
         this.goalLocation = goalLocation;
+        this.originalSourceLocation = originalSourceLocation;
     }
 
 
@@ -102,6 +106,9 @@ public class TaxiPassenger implements ObjectInstance {
         else if(key.equals(VAR_PICKEDUPATLEASTONCE)){
             return pickedUpAtLeastOnce;
         }
+        else if(key.equals(VAR_ORIGINALSOURCELOCATION)){
+            return originalSourceLocation;
+        }
 
         throw new RuntimeException("Unknown key for TaxiPassenger " + key);
     }
@@ -109,7 +116,7 @@ public class TaxiPassenger implements ObjectInstance {
     @Override
     public TaxiPassenger copy() {
         return new TaxiPassenger(name, x, y, inTaxi, justPickedUp,
-                goalLocation, pickedUpAtLeastOnce);
+                goalLocation, pickedUpAtLeastOnce, originalSourceLocation);
     }
 
     @Override

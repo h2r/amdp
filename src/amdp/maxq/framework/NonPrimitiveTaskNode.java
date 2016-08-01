@@ -4,6 +4,7 @@ package amdp.maxq.framework;
 import burlap.behavior.policy.Policy;
 import burlap.behavior.valuefunction.QProvider;
 import burlap.mdp.core.state.State;
+import burlap.statehashing.HashableState;
 
 /**
  * This is a task node from the MAXQ paper. Such a task node is associated with a grounded action,
@@ -17,6 +18,8 @@ public abstract class NonPrimitiveTaskNode implements TaskNode{
     protected Policy policy;
 
     protected String name;
+
+
 
     @Override
     public boolean isTaskPrimitive(){
@@ -39,6 +42,15 @@ public abstract class NonPrimitiveTaskNode implements TaskNode{
 
     public abstract Object parametersSet(State s);
 
+    public boolean hasHashingFactory(){
+        return false;
+    }
+
+    public HashableState hashedState(State s, GroundedTask childTask){
+        System.err.println("Tried to get hashable state when not set at the node!");
+        return null;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -59,4 +71,6 @@ public abstract class NonPrimitiveTaskNode implements TaskNode{
     public double pseudoRewardFunction(State s, GroundedTask gt){
         return 0.;
     }
+
+
 }

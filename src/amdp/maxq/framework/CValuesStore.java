@@ -27,9 +27,6 @@ public class CValuesStore{
         if (!this.internalMap.get(parentGroundedTask).containsKey(currentGroundedSubTask)) {
             this.internalMap.get(parentGroundedTask).put(currentGroundedSubTask, new HashMap<HashableState, Double>());
         }
-//        if (!this.internalMap.get(parentGroundedTask).get(currentGroundedSubTask).containsKey(hs)) {
-//            this.internalMap.get(parentGroundedTask).get(currentGroundedSubTask).put(hs, value);
-//        }
         this.internalMap.get(parentGroundedTask).get(currentGroundedSubTask).put(hs, value);
     }
 
@@ -52,7 +49,10 @@ public class CValuesStore{
         int numParams =0;
         for(GroundedTask pgt : internalMap.keySet()){
             for(GroundedTask cgt : internalMap.get(pgt).keySet()){
-                numParams+= internalMap.get(pgt).get(cgt).size();
+                int temp = internalMap.get(pgt).get(cgt).size();
+                numParams+= temp;
+                System.out.println("Parent task: " + pgt.action.actionName()
+                        + "; Child task: " + cgt.action.actionName() + "; num States: " +temp);
             }
         }
         return numParams;

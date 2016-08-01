@@ -17,6 +17,10 @@ import java.util.List;
  */
 public class TaxiRewardFunction implements RewardFunction {
 
+    public double stepReward = -1.0;
+    public double illegalAction = -10;
+    public double goalReward = +20;
+
     TerminalFunction tf;
     Integer numPass = 0;
     public TaxiRewardFunction(Integer numPassengers, TerminalFunction tf) {
@@ -27,9 +31,7 @@ public class TaxiRewardFunction implements RewardFunction {
 
     @Override
     public double reward(State state, Action groundedAction, State state1) {
-        double stepReward = -1.0;
-        double illegalAction = -10;
-        double goalReward = +20;
+
         if(tf.isTerminal(state1)){
             return numPass * goalReward + stepReward;
         }

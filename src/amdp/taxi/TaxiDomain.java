@@ -69,6 +69,7 @@ public class TaxiDomain implements DomainGenerator{
     // this is the current location attribute
     public static final String								VAR_LOCATION = "locationAtt";
     public static final String								VAR_GOALLOCATION = "goalLocationAtt";
+    public static final String								VAR_ORIGINALSOURCELOCATION = "originalSourceLocationAtt";
 
     public static final String								VAR_JUSTPICKEDUP = "justPickedupAtt";
 
@@ -905,7 +906,7 @@ public class TaxiDomain implements DomainGenerator{
 
         TaxiAgent taxiAgent = new TaxiAgent(TAXICLASS+0,0,3);
 
-        TaxiPassenger p1 = new TaxiPassenger(PASSENGERCLASS+0,3, 0, RED);
+        TaxiPassenger p1 = new TaxiPassenger(PASSENGERCLASS+0,3, 0, RED, BLUE);
 
         TaxiLocation l0 = new TaxiLocation(0, 0,LOCATIONCLASS+0,YELLOW);
         TaxiLocation l1 = new TaxiLocation(0, 4,LOCATIONCLASS+1,RED);
@@ -956,8 +957,8 @@ public class TaxiDomain implements DomainGenerator{
 
         TaxiAgent taxiAgent = new TaxiAgent(TAXICLASS+0,0,3);
 
-        TaxiPassenger p1 = new TaxiPassenger(PASSENGERCLASS+0,0, 0, BLUE);
-        TaxiPassenger p2 = new TaxiPassenger(PASSENGERCLASS+1,3, 0, GREEN);
+        TaxiPassenger p1 = new TaxiPassenger(PASSENGERCLASS+0,0, 0, BLUE, YELLOW);
+        TaxiPassenger p2 = new TaxiPassenger(PASSENGERCLASS+1,3, 0, GREEN, BLUE);
 
         TaxiLocation l0 = new TaxiLocation(0, 0,LOCATIONCLASS+0,YELLOW);
         TaxiLocation l1 = new TaxiLocation(0, 4,LOCATIONCLASS+1,RED);
@@ -1033,7 +1034,7 @@ public class TaxiDomain implements DomainGenerator{
         TaxiLocation tempGoalLocation = taxiLocations.get(rand.nextInt(taxiLocations.size()));
 
 
-        TaxiPassenger p1 = new TaxiPassenger(PASSENGERCLASS+0,tempStartLocation.x, tempStartLocation.y, tempGoalLocation.colour);
+        TaxiPassenger p1 = new TaxiPassenger(PASSENGERCLASS+0,tempStartLocation.x, tempStartLocation.y, tempGoalLocation.colour, tempStartLocation.colour);
         taxiPassengers.add(p1);
 
         TaxiMapWall h1 = new TaxiMapWall(HWALLCLASS+0,0, 5, 0,false);
@@ -1088,7 +1089,7 @@ public class TaxiDomain implements DomainGenerator{
         TaxiLocation tempGoalLocation = taxiLocations.get(rand.nextInt(taxiLocations.size()));
 
 
-        TaxiPassenger p1 = new TaxiPassenger(PASSENGERCLASS+0,tempStartLocation.x, tempStartLocation.y, tempGoalLocation.colour);
+        TaxiPassenger p1 = new TaxiPassenger(PASSENGERCLASS+0,tempStartLocation.x, tempStartLocation.y, tempGoalLocation.colour, tempStartLocation.colour);
         taxiPassengers.add(p1);
 
         TaxiMapWall h1 = new TaxiMapWall(HWALLCLASS+0,0, 5, 0,false);

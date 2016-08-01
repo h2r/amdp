@@ -12,6 +12,9 @@ import burlap.behavior.valuefunction.QValue;
 import burlap.mdp.core.action.Action;
 import burlap.mdp.core.action.SimpleAction;
 import burlap.mdp.core.state.State;
+import burlap.statehashing.HashableState;
+import burlap.statehashing.HashableStateFactory;
+import burlap.statehashing.WrappedHashableState;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +28,37 @@ public class PutTaskNode extends NonPrimitiveTaskNode {
 
     List<String[]> params = new ArrayList<String[]>();
     List<GroundedTask> groundedTasks = new ArrayList<GroundedTask>();
+
+    HashableStateFactory navHsf = new HashableStateFactory() {
+        @Override
+        public HashableState hashState(State s) {
+//            System.out.println("calling the nav method?");
+            return new NavHashState(s);
+        }
+    };
+
+    HashableStateFactory dropoffHsf = new HashableStateFactory() {
+        @Override
+        public HashableState hashState(State s) {
+            return new PutHashState(s);
+        }
+    };
+
+
+    @Override
+    public boolean hasHashingFactory(){
+        return true;
+    }
+
+    @Override
+    public HashableState hashedState(State s, GroundedTask childTask){
+        // if navigate return the navigate states else return the pickup hash states
+        if(childTask.getT().getName().split(":")[0].equals("navigate")){
+//            System.out.println("was here");
+            return this.navHsf.hashState(s);
+        }
+        return this.dropoffHsf.hashState(s);
+    }
 
     public PutTaskNode(String name, List<String[]> params, TaskNode[] children) {
         this.name = name;
@@ -91,6 +125,92 @@ public class PutTaskNode extends NonPrimitiveTaskNode {
         }
 
         return gtList;
+    }
+
+
+    public class NavHashState extends WrappedHashableState {
+        // original state
+        State state;
+
+        public NavHashState(State s){
+            this.state = s;
+        }
+
+        private int createHash(){
+            // check source and return state!
+            int hashC =0;
+            for(TaxiPassenger p:((TaxiState)state).passengers){
+                hashC = 31 * hashC + p.goalLocation.hashCode();
+            }
+            return hashC;
+        }
+
+        @Override
+        public int hashCode() {
+            // boolean true or false
+            return createHash();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            // check hash of both obj and our, if equal then return true else false!
+            if (obj == null) {
+                return false;
+            }
+
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+
+            NavHashState otherObj = (NavHashState)obj;
+
+
+            // if legal then equal
+            return (otherObj.createHash() == this.createHash()) ? true : false;
+        }
+    }
+
+    public class PutHashState extends WrappedHashableState {
+        // original state
+        State state;
+
+        public PutHashState(State s){
+            this.state = s;
+        }
+
+        private int createHash(){
+            int x = ((TaxiState)state).taxi.x;
+            int y = ((TaxiState)state).taxi.y;
+            int hashC =0;
+            for(TaxiPassenger p:((TaxiState)state).passengers){
+                hashC = 31 * hashC + p.goalLocation.hashCode();
+            }
+            return 31*x + 17* y + hashC;
+        }
+
+        @Override
+        public int hashCode() {
+            // boolean true or false
+            return createHash();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            // check hash of both obj and our, if equal then return true else false!
+//            System.out.println("2 was here too!");
+            if (obj == null) {
+                return false;
+            }
+
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+
+            PutHashState otherObj = (PutHashState)obj;
+
+            // if legal then equal
+            return (otherObj.createHash() == this.createHash()) ? true : false;
+        }
     }
 
 }

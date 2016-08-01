@@ -7,6 +7,7 @@ import burlap.mdp.core.action.ActionUtils;
 import burlap.mdp.core.oo.ObjectParameterizedAction;
 import burlap.mdp.core.state.State;
 import burlap.mdp.singleagent.oo.ObjectParameterizedActionType;
+import burlap.statehashing.HashableState;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -70,5 +71,14 @@ public abstract class PrimitiveTaskNode implements TaskNode {
     @Override
     public int hashCode() {
         return actionType != null ? actionType.hashCode() : 0;
+    }
+
+    public boolean hasHashingFactory(){
+        return false;
+    }
+
+    public HashableState hashedState(State s){
+        System.err.println("Tried to get hashable state when not set at the node!");
+        return null;
     }
 }

@@ -107,10 +107,6 @@ public class MAXQLearningAgent implements LearningAgent {
         return learningRate;
     }
 
-//    public void setEpsilon(double epsilon) {
-//        this.epsilon = epsilon;
-//    }
-
     public double getC(GroundedTask parentTask, GroundedTask childTask, State s){
         return C.get(parentTask, childTask, this.hsf.hashState(s));
     }
@@ -155,19 +151,6 @@ public class MAXQLearningAgent implements LearningAgent {
                     List<GroundedTask> tempGroundedTaskList = child.getApplicableGroundedTasks(s);
                     for(GroundedTask gt: tempGroundedTaskList){
                         if(gt.action.equals(a)){
-//                            if (!CTilde.containsKey(parentGroundedTask)) {
-//                                CTilde.put(parentGroundedTask, new HashMap<GroundedTask, HashMap<HashableState, Double>>());
-//                            }
-//                            if (!CTilde.get(parentGroundedTask).containsKey(gt)) {
-//                                CTilde.get(parentGroundedTask).put(gt, new HashMap<HashableState, Double>());
-//                            }
-//                            if (!CTilde.get(parentGroundedTask).get(gt).containsKey(hs)) {
-//                                CTilde.get(parentGroundedTask).get(gt).put(hs, VMax);
-//                            }
-
-                            // using the C value from CTildeValue change if needed
-//                            double q = evaluateMaxNode(gt, s) + cValue.get(parentGroundedTask).get(gt).get(hs);
-
                             double q = evaluateMaxNode(gt, s).getRight() + CTilde.get(parentGroundedTask,gt, hs);
                             return q;
                         }
@@ -186,11 +169,10 @@ public class MAXQLearningAgent implements LearningAgent {
                 for(TaskNode child:children){
                     allChildredGroundedTasks.addAll(child.getApplicableGroundedTasks(s));
                 }
-//                HashableState hs = hsf.hashState(s);
 
                 for(GroundedTask gt : allChildredGroundedTasks) {
                     double q = this.qValue(s,gt.action);
-                    //evaluateMaxNode(gt, s).getRight() + CTilde.get(parentGroundedTask).get(gt).get(hs);
+
                     qValueList.add(new QValue(s, gt.action,q));
 
                 }
@@ -211,62 +193,6 @@ public class MAXQLearningAgent implements LearningAgent {
 
 
 
-    /**
-     * This is an approximation of a GLIE policy (epsilon greedy here) as mentioned in MAXQ
-     * @param currentGroundedTask: the chosen grounded task
-     * @param s: current state
-     * @return
-     */
-//    public GroundedTask getGLIESubtask(GroundedTask currentGroundedTask, State s){
-//        // considering this task node has children it is a non primitive task node
-//        NonPrimitiveTaskNode currentTaskNode = (NonPrimitiveTaskNode) currentGroundedTask.t;
-//        TaskNode[] children = currentTaskNode.getChildren();
-//        List<GroundedTask> allChildredGroundedTasks = new ArrayList<GroundedTask>();
-//        for(TaskNode child:children){
-//            allChildredGroundedTasks.addAll(child.getApplicableGroundedTasks(s));
-//        }
-//
-//
-//        double roll = rand.nextDouble();
-//        if(!freezeLearning) {
-//            if (roll <= epsilon) {
-//                int selected = rand.nextInt(allChildredGroundedTasks.size());
-//                GroundedTask gt = allChildredGroundedTasks.get(selected);
-//                return gt;
-//            }
-//        }
-////        Map<GroundedTask, Double> qValues = new HashMap<>();
-//
-//        List<GroundedTask> maxTasks = new ArrayList<GroundedTask>();
-//
-//        HashableState hs = this.hsf.hashState(s);
-//
-//        Double maxQ = Double.NEGATIVE_INFINITY;
-//        for(GroundedTask gt : allChildredGroundedTasks){
-////            double q = getValue(currentGroundedTask, gt, s);
-//            if(!cValue.containsKey(currentGroundedTask)){
-//                cValue.put(currentGroundedTask,new HashMap<GroundedTask, HashMap<HashableState, Double>>());
-//            }
-//            if(!cValue.get(currentGroundedTask).containsKey(gt)){
-//                cValue.get(currentGroundedTask).put(gt,new HashMap<HashableState, Double>());
-//            }
-//            if(!cValue.get(currentGroundedTask).get(gt).containsKey(hs)){
-//                cValue.get(currentGroundedTask).get(gt).put(hs,VMax);
-//            }
-//            double q = evaluateMaxNode(gt,s) + cValue.get(currentGroundedTask).get(gt).get(hs);
-//            if(maxQ==q){
-//                maxTasks.add(gt);
-//            }
-//            if(maxQ<q){
-//                maxTasks.clear();
-//                maxTasks.add(gt);
-//                maxQ =q;
-//            }
-//        }
-//
-//        int selected = rand.nextInt(maxTasks.size());
-//        return maxTasks.get(selected);
-//    }
 
 
     /**
@@ -307,26 +233,7 @@ public class MAXQLearningAgent implements LearningAgent {
         Double maxQ = Double.NEGATIVE_INFINITY;
         HashableState hs = this.hsf.hashState(s);
         for(GroundedTask gt : allChildrenGroundedTasks){
-//            double q = getValue(parentTask, gt, s) + evaluateMaxNode(gt,s);
-            //TODO: make a method for returns here
-//            if(!C.containsKey(parentTask)){
-//                C.put(parentTask,new HashMap<GroundedTask, HashMap<HashableState, Double>>());
-//            }
-//            if(!C.get(parentTask).containsKey(gt)){
-//                C.get(parentTask).put(gt,new HashMap<HashableState, Double>());
-//            }
-//            if(!C.get(parentTask).get(gt).containsKey(hs)){
-//                C.get(parentTask).get(gt).put(hs,VMax);
-//            }
-//            if(!CTilde.containsKey(parentTask)){
-//                CTilde.put(parentTask,new HashMap<GroundedTask, HashMap<HashableState, Double>>());
-//            }
-//            if(!CTilde.get(parentTask).containsKey(gt)){
-//                CTilde.get(parentTask).put(gt,new HashMap<HashableState, Double>());
-//            }
-//            if(!CTilde.get(parentTask).get(gt).containsKey(hs)){
-//                CTilde.get(parentTask).get(gt).put(hs,VMax);
-//            }
+//
             double subtreeEvaluation  = evaluateMaxNode(gt,s).getRight();
             double explorationQ = CTilde.get(parentTask, gt, hs) + subtreeEvaluation;
             double returnedQ = C.get(parentTask, gt, hs) + subtreeEvaluation;
@@ -353,60 +260,6 @@ public class MAXQLearningAgent implements LearningAgent {
         return new MutablePair<Action, Double>(maxTasks.get(maxValueIndex).action,maxValues.get(maxValueIndex));
     }
 
-//    /**
-//     *This gives the value for a subtask given its parent and current state
-//     * @param parentTask : parent to the current task
-//     * @param childTask : current task
-//     * @param s : state
-//     * @return
-//     */
-//    public double getValue(GroundedTask parentTask, GroundedTask childTask, State s){
-//        HashableState hs = this.hsf.hashState(s);
-//        if(childTask.t.isTaskPrimitive()){
-//            // if primitive then value for this node exists!
-//            childTask.hashCode();
-//            if(!qValue.containsKey(childTask)){
-//                qValue.put(childTask,new HashMap<HashableState, Double>());
-//                qValue.get(childTask).put(hs,VMax);
-//            }
-//            if(!qValue.get(childTask).containsKey(hs)){
-//                qValue.get(childTask).put(hs,VMax);
-//            }
-//            return qValue.get(childTask).get(hs);
-//        }
-//        else{
-//            List<GroundedTask> maxTasks = new ArrayList<>();
-//            List<GroundedTask> allChildredGroundedTasks = new ArrayList<>();
-//            TaskNode[] children = ((NonPrimitiveTaskNode)childTask.t).getChildren();
-//            for(TaskNode child:children){
-//                allChildredGroundedTasks.addAll(child.getGroundedTasks(s));
-//            }
-//
-//            Double maxQ = Double.NEGATIVE_INFINITY;
-//            for(GroundedTask gt : allChildredGroundedTasks){
-//                double q = getValue(childTask, gt, s);
-//                if(maxQ==q){
-//                    maxTasks.add(gt);
-//                }
-//                if(maxQ<q){
-//                    maxTasks.clear();
-//                    maxTasks.add(gt);
-//                    maxQ =q;
-//                }
-//            }
-//            // to check if things are initialized else add initializations for all states as seen
-//            if(!cValue.containsKey(parentTask)){
-//                cValue.put(parentTask,new HashMap<GroundedTask, HashMap<HashableState, Double>>());
-//            }
-//            if(!cValue.get(parentTask).containsKey(childTask)){
-//                cValue.get(parentTask).put(childTask,new HashMap<HashableState, Double>());
-//            }
-//            if(!cValue.get(parentTask).get(childTask).containsKey(hs)){
-//                cValue.get(parentTask).get(childTask).put(hs,VMax);
-//            }
-//            return maxQ + cValue.get(parentTask).get(childTask).get(hs);
-//        }
-//    }
 
     /**
      * this is the MAXQ-Q function from the paper
@@ -460,6 +313,8 @@ public class MAXQLearningAgent implements LearningAgent {
                 if (!qValue.get(parentGroundedTask).containsKey(hs)) {
                     qValue.get(parentGroundedTask).put(hs, this.VMax);
                 }
+                //TODO: call reward decomposition function here that seperates rewards on a node basis!
+
                 double value = (1 - learningRate) * qValue.get(parentGroundedTask).get(hs)
                         + learningRate * eo.r;
                 qValue.get(parentGroundedTask).put(hs, value);
@@ -550,27 +405,6 @@ public class MAXQLearningAgent implements LearningAgent {
 
                                 State currentState = childSeq.get(i);
                                 HashableState hashedCurrentState = this.hsf.hashState(currentState);
-//                                if (!CTilde.containsKey(parentGroundedTask)) {
-//                                    CTilde.put(parentGroundedTask, new HashMap<GroundedTask, HashMap<HashableState, Double>>());
-//                                }
-//                                if (!CTilde.get(parentGroundedTask).containsKey(currentGroundedSubTask)) {
-//                                    CTilde.get(parentGroundedTask).put(currentGroundedSubTask, new HashMap<HashableState, Double>());
-//                                }
-//                                if (!CTilde.get(parentGroundedTask).get(currentGroundedSubTask).containsKey(hashedCurrentState)) {
-//                                    CTilde.get(parentGroundedTask).get(currentGroundedSubTask).put(hashedCurrentState, VMax);
-//                                }
-//
-//
-//                                //update CValue if values not present
-//                                if (!C.containsKey(parentGroundedTask)) {
-//                                    C.put(parentGroundedTask, new HashMap<GroundedTask, HashMap<HashableState, Double>>());
-//                                }
-//                                if (!C.get(parentGroundedTask).containsKey(currentGroundedSubTask)) {
-//                                    C.get(parentGroundedTask).put(currentGroundedSubTask, new HashMap<HashableState, Double>());
-//                                }
-//                                if (!C.get(parentGroundedTask).get(currentGroundedSubTask).containsKey(hashedCurrentState)) {
-//                                    C.get(parentGroundedTask).get(currentGroundedSubTask).put(hashedCurrentState, VMax);
-//                                }
 
 
                                 double updateCTildeValue=0.;
@@ -632,28 +466,6 @@ public class MAXQLearningAgent implements LearningAgent {
                         //update CTildeValue
                         State currentState = childSeq.get(i);
                         HashableState hashedCurrentState = this.hsf.hashState(currentState);
-//                        if (!CTilde.containsKey(parentGroundedTask)) {
-//                            CTilde.put(parentGroundedTask, new HashMap<GroundedTask, HashMap<HashableState, Double>>());
-//                        }
-//                        if (!CTilde.get(parentGroundedTask).containsKey(currentGroundedSubTask)) {
-//                            CTilde.get(parentGroundedTask).put(currentGroundedSubTask, new HashMap<HashableState, Double>());
-//                        }
-//                        if (!CTilde.get(parentGroundedTask).get(currentGroundedSubTask).containsKey(hashedCurrentState)) {
-//                            CTilde.get(parentGroundedTask).get(currentGroundedSubTask).put(hashedCurrentState, VMax);
-//                        }
-//
-//
-//                        //update CValue if values not present
-//                        if (!C.containsKey(parentGroundedTask)) {
-//                            C.put(parentGroundedTask, new HashMap<GroundedTask, HashMap<HashableState, Double>>());
-//                        }
-//                        if (!C.get(parentGroundedTask).containsKey(currentGroundedSubTask)) {
-//                            C.get(parentGroundedTask).put(currentGroundedSubTask, new HashMap<HashableState, Double>());
-//                        }
-//                        if (!C.get(parentGroundedTask).get(currentGroundedSubTask).containsKey(hashedCurrentState)) {
-//                            C.get(parentGroundedTask).get(currentGroundedSubTask).put(hashedCurrentState, VMax);
-//                        }
-
 
                         double updateCTildeValue=0.;
                         double updateCValue=0.;
@@ -753,13 +565,14 @@ public class MAXQLearningAgent implements LearningAgent {
             this.taskNodesStack.add(gtRoot);
             int level=0;
             int executedSteps = MAXQ_Q(gtRoot, env, ea, level).size();
-//            steps+=executedSteps;
         }
 
         return ea;
     }
 
-
+    public void setVmax(double vmax) {
+        this.VMax = vmax;
+    }
 }
 
 

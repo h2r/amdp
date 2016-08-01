@@ -51,7 +51,7 @@ public class TaxiMaxQRunner {
         Random rand = randomFactory.getMapped(0);
 
 
-//        State s = TaxiDomain.getComplexState(d);
+//        State state = TaxiDomain.getComplexState(d);
         TerminalFunction taxiTF = new TaxiTerminationFunction();
         RewardFunction taxiRF = new TaxiRewardFunction(1,taxiTF);
 
@@ -127,11 +127,11 @@ public class TaxiMaxQRunner {
 
             System.out.println("-------- MAXQ Test! ----------");
 //
-//            State s = TaxiDomain.getClassicState(d, false);
+//            State state = TaxiDomain.getClassicState(d, false);
 
             int numberOfTests = 1;
             int numberOfLearningEpisodes = 1000;
-            int takeModOf = 100;
+            int takeModOf = 1;
             int startTest = 200;
 //            int numberOfTests = 1;
 //            int numberOfLearningEpisodes = 10;
@@ -150,21 +150,22 @@ public class TaxiMaxQRunner {
 
 
 
-//        SimulatedEnvironment env = new SimulatedEnvironment(d,taxiRF, navigate.getGroundedTasks(s).get(0).getTerminalFunction(), s);
+//        SimulatedEnvironment env = new SimulatedEnvironment(d,taxiRF, navigate.getGroundedTasks(state).get(0).getTerminalFunction(), state);
 
-//            SimulatedEnvironment env = new SimulatedEnvironment(d, s);
+//            SimulatedEnvironment env = new SimulatedEnvironment(d, state);
 
-//        System.out.println("state: " + s.getCompleteStateDescription());
+//        System.out.println("state: " + state.getCompleteStateDescription());
 
 
             for (int i = 0; i < numberOfTests; i++) {
                 List<Episode> episodesMAXQ = new ArrayList<Episode>();
                 List<Episode> testEpisodesMAXQ = new ArrayList<Episode>();
-                MAXQLearningAgent maxqLearningAgent = new MAXQLearningAgent(rootNode, new SimpleHashableStateFactory(), 0.95, 1.0);
-//                MAXQStateAbstractionAgent maxqLearningAgent = new MAXQStateAbstractionAgent(rootNode, new SimpleHashableStateFactory(), 0.95, 1.0);
+//                MAXQLearningAgent maxqLearningAgent = new MAXQLearningAgent(rootNode, new SimpleHashableStateFactory(), 1.0, 1.0);
+                MAXQStateAbstractionAgent maxqLearningAgent = new MAXQStateAbstractionAgent(rootNode, new SimpleHashableStateFactory(), 1.0, 0.25);
 //                MAX0LearningAgent maxqLearningAgent = new MAX0LearningAgent(rootNode, new SimpleHashableStateFactory(), 0.95, 0.5);
 //                MAX0FasterLearningAgent maxqLearningAgent = new MAX0FasterLearningAgent(rootNode, new SimpleHashableStateFactory(), 0.95, 0.70);
-                maxqLearningAgent.setRmax(0.123 * (1 - 0.95));
+//                maxqLearningAgent.setRmax(0.123 * (1 - 0.95));
+                maxqLearningAgent.setVmax(0.123 );
                 maxqLearningAgent.setQProviderForTaskNode(rootNode);
                 maxqLearningAgent.setQProviderForTaskNode(getNode);
                 maxqLearningAgent.setQProviderForTaskNode(putNode);
@@ -183,7 +184,8 @@ public class TaxiMaxQRunner {
                     System.out.println("-------------------------------------------------------------");
                     State sNew = TaxiDomain.getRandomClassicState(rand, d, false);
                     SimulatedEnvironment envN = new SimulatedEnvironment(d, sNew);
-                    Episode ea = maxqLearningAgent.runLearningEpisode(envN,1000);
+
+                    Episode ea = maxqLearningAgent.runLearningEpisode(envN,5000);
                     episodesMAXQ.add(ea);
 
 //                    env.resetEnvironment();
@@ -213,7 +215,7 @@ public class TaxiMaxQRunner {
                 System.out.println("number of params MAXQQ = " + maxqLearningAgent.numberOfParams());
                 Visualizer v = TaxiVisualizer.getVisualizer(5,5);
                 new EpisodeSequenceVisualizer(v, d, episodesMAXQ);
-                new EpisodeSequenceVisualizer(v,d,testEpisodesMAXQ);
+//                new EpisodeSequenceVisualizer(v,d,testEpisodesMAXQ);
 
             }
 
@@ -361,7 +363,7 @@ public class TaxiMaxQRunner {
 
 
             for (int i = 0; i < numberOfTests; i++) {
-//                State s = TaxiDomain.getRandomClassicState(rand, d, false);
+//                State state = TaxiDomain.getRandomClassicState(rand, d, false);
                 SimulatedEnvironment env = new SimulatedEnvironment(d, s);
                 List<Episode> episodesQ = new ArrayList<Episode>();
 //                QLearning q = new QLearning(td, 0.95, new SimpleHashableStateFactory(), 0.123, 0.35);
