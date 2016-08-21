@@ -15,8 +15,8 @@ import burlap.mdp.core.Domain;
 import burlap.mdp.core.StateTransitionProb;
 import burlap.mdp.core.TerminalFunction;
 import burlap.mdp.core.action.Action;
-import burlap.mdp.core.action.ActionType;
 import burlap.mdp.core.action.UniversalActionType;
+import burlap.mdp.core.oo.OODomain;
 import burlap.mdp.core.oo.propositional.PropositionalFunction;
 import burlap.mdp.core.oo.state.OOState;
 import burlap.mdp.core.oo.state.ObjectInstance;
@@ -65,6 +65,7 @@ public class TaxiDomain implements DomainGenerator{
     public static final String								VAR_WALLMAX = "wallMaxAtt";
     public static final String								VAR_WALLOFFSET = "wallOffsetAtt";
     public static final String								VAR_PICKEDUPATLEASTONCE = "pickedUpAtLeastOnce";
+    public static final String								VAR_VERTICALWALL = "verticalWall";
 
     // this is the current location attribute
     public static final String								VAR_LOCATION = "locationAtt";
@@ -77,8 +78,10 @@ public class TaxiDomain implements DomainGenerator{
     public static final String								TAXICLASS = "taxi";
     public static final String								LOCATIONCLASS = "location";
     public static final String								PASSENGERCLASS = "passenger";
-    public static final String								HWALLCLASS = "horizontalWall";
-    public static final String								VWALLCLASS = "verticalWall";
+    //    public static final String								HWALLCLASS = "horizontalWall";
+    //    public static final String								VWALLCLASS = "verticalWall";
+    public static final String								WALLCLASS = "wall";
+
 
 
     public static final String								ACTION_NORTH = "north";
@@ -301,6 +304,9 @@ public class TaxiDomain implements DomainGenerator{
             tf = new NullTermination();
         }
 
+        domain.addStateClass(TAXICLASS, TaxiAgent.class).addStateClass(LOCATIONCLASS, TaxiLocation.class)
+                .addStateClass(PASSENGERCLASS, TaxiPassenger.class);
+
         if(fickleTaxi){
             TaxiModel smodel = new TaxiModel(rand, moveTransitionDynamics,
                     fickleLocationDynamics, fickleTaxi, fickleProbability, includeFuel );
@@ -334,11 +340,22 @@ public class TaxiDomain implements DomainGenerator{
                     new UniversalActionType(ACTION_PICKUP));
         }
 
+        OODomain.Helper.addPfsToDomain(domain, this.generatePfs(domain));
+
+
 
         return domain;
     }
 
+    private List<PropositionalFunction> generatePfs(OOSADomain domain) {
+        List<PropositionalFunction> pfs = new ArrayList<PropositionalFunction>();
+        pfs.add(new PF_PassengerAtGoalLoc(PASSENGERATGOALLOCATIONPF, domain,new String[]{PASSENGERCLASS}));
+        pfs.add(new PF_PickUp(PASSENGERPICKUPPF,domain,new String[]{}));
+        pfs.add(new PF_PutDown(PASSENGERPUTDOWNPF,new String[]{}));
+        pfs.add(new PF_TaxiAtLoc(TAXIATLOCATIONPF,new String[]{LOCATIONCLASS}));
 
+        return pfs;
+    }
 
 
     public static class TaxiModel implements FullStateModel{
@@ -606,36 +623,36 @@ public class TaxiDomain implements DomainGenerator{
             //check for all wall boundings
 
             if(dx > 0){
-                List<ObjectInstance> vwalls = ts.objectsOfClass(VWALLCLASS);
+                List<ObjectInstance> vwalls = ts.objectsOfClass(WALLCLASS);
                 for(ObjectInstance wall : vwalls){
-                    if(wallEast(tx, ty, (TaxiMapWall) wall)){
+                    if(wallEast(tx, ty, (TaxiMapWall) wall) && ((TaxiMapWall)wall).verticalWall){
                         nx = tx;
                         break;
                     }
                 }
             }
             else if(dx < 0){
-                List<ObjectInstance> vwalls = ts.objectsOfClass(VWALLCLASS);
+                List<ObjectInstance> vwalls = ts.objectsOfClass(WALLCLASS);
                 for(ObjectInstance wall : vwalls){
-                    if(wallWest(tx, ty, (TaxiMapWall)wall)){
+                    if(wallWest(tx, ty, (TaxiMapWall)wall) && ((TaxiMapWall)wall).verticalWall){
                         nx = tx;
                         break;
                     }
                 }
             }
             else if(dy > 0){
-                List<ObjectInstance> hwalls = ts.objectsOfClass(HWALLCLASS);
+                List<ObjectInstance> hwalls = ts.objectsOfClass(WALLCLASS);
                 for(ObjectInstance wall : hwalls){
-                    if(wallNorth(tx, ty, (TaxiMapWall)wall)){
+                    if(wallNorth(tx, ty, (TaxiMapWall)wall) && !((TaxiMapWall)wall).verticalWall){
                         ny = ty;
                         break;
                     }
                 }
             }
             else if(dy < 0){
-                List<ObjectInstance> hwalls = ts.objectsOfClass(HWALLCLASS);
+                List<ObjectInstance> hwalls = ts.objectsOfClass(WALLCLASS);
                 for(ObjectInstance wall : hwalls){
-                    if(wallSouth(tx, ty, (TaxiMapWall)wall)){
+                    if(wallSouth(tx, ty, (TaxiMapWall)wall) && !((TaxiMapWall)wall).verticalWall){
                         ny = ty;
                         break;
                     }
@@ -676,14 +693,16 @@ public class TaxiDomain implements DomainGenerator{
 
         @Override
         public boolean isTrue(OOState s, String... params) {
-            TaxiAgent taxi = ((TaxiState)s).taxi;
+            TaxiState ns = ((TaxiState)s).copy();
+            TaxiAgent taxi = ns.taxi;
 //            ObjectInstance o = s.getFirstObjectOfClass(TAXICLASS);
             int xt = taxi.x;
             int yt = taxi.y;
             // params here are the name of a location like Location 1
 
             boolean returnValue = false;
-            TaxiLocation location = (TaxiLocation)((TaxiState)s).object(params[0]);
+            int i = ns.locationIndWithColour(params[0]);
+            TaxiLocation location = ns.touchLocation(i);//TaxiLocation)((TaxiState)s).object(params[0]);
 
             int xl = location.x;
             int yl = location.y;
@@ -697,9 +716,9 @@ public class TaxiDomain implements DomainGenerator{
     }
 
 
-    public class PF_PassengerAtLoc extends PropositionalFunction{
+    public class PF_PassengerAtGoalLoc extends PropositionalFunction{
 
-        public PF_PassengerAtLoc(String name, Domain domain, String [] params){
+        public PF_PassengerAtGoalLoc(String name, Domain domain, String [] params){
             super(name, params);
         }
 
@@ -927,14 +946,14 @@ public class TaxiDomain implements DomainGenerator{
 
         taxiPassengers.add(p1);
 
-        TaxiMapWall h1 = new TaxiMapWall(HWALLCLASS+0,0, 5, 0,false);
-        TaxiMapWall h2 = new TaxiMapWall(HWALLCLASS+1,0, 5, 5,false);
+        TaxiMapWall h1 = new TaxiMapWall(WALLCLASS+0,0, 5, 0,false);
+        TaxiMapWall h2 = new TaxiMapWall(WALLCLASS+1,0, 5, 5,false);
 
-        TaxiMapWall v1 = new TaxiMapWall(VWALLCLASS+0,0, 5, 0,true);
-        TaxiMapWall v2 = new TaxiMapWall(VWALLCLASS+1,0, 5, 5,true);
-        TaxiMapWall v3 = new TaxiMapWall(VWALLCLASS+2,0, 2, 1,true);
-        TaxiMapWall v4 = new TaxiMapWall(VWALLCLASS+3,3, 5, 2,true);
-        TaxiMapWall v5 = new TaxiMapWall(VWALLCLASS+4,0, 2, 3,true);
+        TaxiMapWall v1 = new TaxiMapWall(WALLCLASS+0,0, 5, 0,true);
+        TaxiMapWall v2 = new TaxiMapWall(WALLCLASS+1,0, 5, 5,true);
+        TaxiMapWall v3 = new TaxiMapWall(WALLCLASS+2,0, 2, 1,true);
+        TaxiMapWall v4 = new TaxiMapWall(WALLCLASS+3,3, 5, 2,true);
+        TaxiMapWall v5 = new TaxiMapWall(WALLCLASS+4,0, 2, 3,true);
 
         List<TaxiMapWall> walls = new ArrayList<TaxiMapWall>();
         walls.add(h1);
@@ -977,17 +996,18 @@ public class TaxiDomain implements DomainGenerator{
         taxiLocations.add(l2);
         taxiLocations.add(l3);
 
-        taxiPassengers.add(p1);
         taxiPassengers.add(p2);
+        taxiPassengers.add(p1);
+//        taxiPassengers.add(p2);
 
-        TaxiMapWall h1 = new TaxiMapWall(HWALLCLASS+0,0, 5, 0,false);
-        TaxiMapWall h2 = new TaxiMapWall(HWALLCLASS+1,0, 5, 5,false);
+        TaxiMapWall h1 = new TaxiMapWall(WALLCLASS+0,0, 5, 0,false);
+        TaxiMapWall h2 = new TaxiMapWall(WALLCLASS+1,0, 5, 5,false);
 
-        TaxiMapWall v1 = new TaxiMapWall(VWALLCLASS+0,0, 5, 0,true);
-        TaxiMapWall v2 = new TaxiMapWall(VWALLCLASS+1,0, 5, 5,true);
-        TaxiMapWall v3 = new TaxiMapWall(VWALLCLASS+2,0, 2, 1,true);
-        TaxiMapWall v4 = new TaxiMapWall(VWALLCLASS+3,3, 5, 2,true);
-        TaxiMapWall v5 = new TaxiMapWall(VWALLCLASS+4,0, 2, 3,true);
+        TaxiMapWall v1 = new TaxiMapWall(WALLCLASS+0,0, 5, 0,true);
+        TaxiMapWall v2 = new TaxiMapWall(WALLCLASS+1,0, 5, 5,true);
+        TaxiMapWall v3 = new TaxiMapWall(WALLCLASS+2,0, 2, 1,true);
+        TaxiMapWall v4 = new TaxiMapWall(WALLCLASS+3,3, 5, 2,true);
+        TaxiMapWall v5 = new TaxiMapWall(WALLCLASS+4,0, 2, 3,true);
 
         List<TaxiMapWall> walls = new ArrayList<TaxiMapWall>();
         walls.add(h1);
@@ -1037,14 +1057,14 @@ public class TaxiDomain implements DomainGenerator{
         TaxiPassenger p1 = new TaxiPassenger(PASSENGERCLASS+0,tempStartLocation.x, tempStartLocation.y, tempGoalLocation.colour, tempStartLocation.colour);
         taxiPassengers.add(p1);
 
-        TaxiMapWall h1 = new TaxiMapWall(HWALLCLASS+0,0, 5, 0,false);
-        TaxiMapWall h2 = new TaxiMapWall(HWALLCLASS+1,0, 5, 5,false);
+        TaxiMapWall h1 = new TaxiMapWall(WALLCLASS+0,0, 5, 0,false);
+        TaxiMapWall h2 = new TaxiMapWall(WALLCLASS+1,0, 5, 5,false);
 
-        TaxiMapWall v1 = new TaxiMapWall(VWALLCLASS+0,0, 5, 0,true);
-        TaxiMapWall v2 = new TaxiMapWall(VWALLCLASS+1,0, 5, 5,true);
-        TaxiMapWall v3 = new TaxiMapWall(VWALLCLASS+2,0, 2, 1,true);
-        TaxiMapWall v4 = new TaxiMapWall(VWALLCLASS+3,3, 5, 2,true);
-        TaxiMapWall v5 = new TaxiMapWall(VWALLCLASS+4,0, 2, 3,true);
+        TaxiMapWall v1 = new TaxiMapWall(WALLCLASS+0,0, 5, 0,true);
+        TaxiMapWall v2 = new TaxiMapWall(WALLCLASS+1,0, 5, 5,true);
+        TaxiMapWall v3 = new TaxiMapWall(WALLCLASS+2,0, 2, 1,true);
+        TaxiMapWall v4 = new TaxiMapWall(WALLCLASS+3,3, 5, 2,true);
+        TaxiMapWall v5 = new TaxiMapWall(WALLCLASS+4,0, 2, 3,true);
 
         List<TaxiMapWall> walls = new ArrayList<TaxiMapWall>();
         walls.add(h1);
@@ -1092,14 +1112,14 @@ public class TaxiDomain implements DomainGenerator{
         TaxiPassenger p1 = new TaxiPassenger(PASSENGERCLASS+0,tempStartLocation.x, tempStartLocation.y, tempGoalLocation.colour, tempStartLocation.colour);
         taxiPassengers.add(p1);
 
-        TaxiMapWall h1 = new TaxiMapWall(HWALLCLASS+0,0, 5, 0,false);
-        TaxiMapWall h2 = new TaxiMapWall(HWALLCLASS+1,0, 5, 5,false);
+        TaxiMapWall h1 = new TaxiMapWall(WALLCLASS+0,0, 5, 0,false);
+        TaxiMapWall h2 = new TaxiMapWall(WALLCLASS+1,0, 5, 5,false);
 
-        TaxiMapWall v1 = new TaxiMapWall(VWALLCLASS+0,0, 5, 0,true);
-        TaxiMapWall v2 = new TaxiMapWall(VWALLCLASS+1,0, 5, 5,true);
-        TaxiMapWall v3 = new TaxiMapWall(VWALLCLASS+2,0, 2, 1,true);
-        TaxiMapWall v4 = new TaxiMapWall(VWALLCLASS+3,3, 5, 2,true);
-        TaxiMapWall v5 = new TaxiMapWall(VWALLCLASS+4,0, 2, 3,true);
+        TaxiMapWall v1 = new TaxiMapWall(WALLCLASS+0,0, 5, 0,true);
+        TaxiMapWall v2 = new TaxiMapWall(WALLCLASS+1,0, 5, 5,true);
+        TaxiMapWall v3 = new TaxiMapWall(WALLCLASS+2,0, 2, 1,true);
+        TaxiMapWall v4 = new TaxiMapWall(WALLCLASS+3,3, 5, 2,true);
+        TaxiMapWall v5 = new TaxiMapWall(WALLCLASS+4,0, 2, 3,true);
 
         List<TaxiMapWall> walls = new ArrayList<TaxiMapWall>();
         walls.add(h1);
@@ -1120,16 +1140,22 @@ public class TaxiDomain implements DomainGenerator{
 
 
 
+
+
+
     public static void main(String[] args) {
 
         RandomFactory randomFactory = new RandomFactory();
         Random rand = randomFactory.getMapped(0);
 
 
+
         TerminalFunction tf = new TaxiTerminationFunction();
         RewardFunction rf = new TaxiRewardFunction(1,tf);
 
         TaxiDomain tdGen = new TaxiDomain(rf,tf);
+
+
 
 //        tdGen.setDeterministicTransitionDynamics();
         tdGen.setTransitionDynamicsLikeFickleTaxiProlem();
@@ -1141,11 +1167,24 @@ public class TaxiDomain implements DomainGenerator{
         OOSADomain td = tdGen.generateDomain();
 
 
+
 //        State s = TaxiDomain.getComplexState(false);
 
 
         double discount = 0.99;
         SimpleHashableStateFactory shf = new SimpleHashableStateFactory(false);
+
+
+        BoundedRTDP planner = new BoundedRTDP(td, discount ,shf,
+                new ConstantValueFunction(0.), new ConstantValueFunction(1.),0.1,-1);
+
+        State startState1 = TaxiDomain.getRandomClassicState(rand, td, false);
+        Policy policy = planner.planFromState(startState1);
+        Episode episode = PolicyUtils.rollout(policy, startState1, td.getModel());
+
+        Visualizer vis = TaxiVisualizer.getVisualizer(5, 5);
+        new EpisodeSequenceVisualizer(vis, td, Arrays.asList(episode));
+
 
         if(false) {
             State s = TaxiDomain.getRandomClassicState(rand, td, false);
@@ -1245,8 +1284,8 @@ public class TaxiDomain implements DomainGenerator{
                 }
             }
 
-                        Visualizer v = TaxiVisualizer.getVisualizer(5, 5);
-                        new EpisodeSequenceVisualizer(v, td, eaList);
+            Visualizer v = TaxiVisualizer.getVisualizer(5, 5);
+            new EpisodeSequenceVisualizer(v, td, eaList);
 
             System.out.println("average steps per start configuration: " + sum/count);
             System.out.println("number of start states: " + count);
@@ -1301,7 +1340,7 @@ public class TaxiDomain implements DomainGenerator{
 
         }
 
-        if(true) {
+        if(false) {
 
             int numberOfTests = 2;
             int numberOfLearningEpisodes = 10000;

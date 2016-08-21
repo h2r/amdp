@@ -58,14 +58,14 @@ public class TaxiState implements MutableOOState{
         int indP = this.passengerInd(objectName);
         if(indP != -1){
             //copy on write
-            touchLocations().remove(indP);
+            touchPassengers().remove(indP);
             return this;
         }
 
         int indW = this.wallInd(objectName);
         if(indW == -1) {
             //copy on write
-            touchLocations().remove(indW);
+            touchWalls().remove(indW);
             return this;
         }
 
@@ -168,24 +168,25 @@ public class TaxiState implements MutableOOState{
         else if(oclass.equals(TaxiDomain.PASSENGERCLASS)){
             return new ArrayList<ObjectInstance>(passengers);
         }
-        else if(oclass.equals(TaxiDomain.HWALLCLASS)){
-            List<ObjectInstance> hWallObjects = new ArrayList<ObjectInstance>();
-            for(TaxiMapWall w:walls){
-                if(!w.verticalWall){
-                    hWallObjects.add(w);
-                }
-            }
-            return hWallObjects;
+        else if(oclass.equals(TaxiDomain.WALLCLASS)){
+//            List<ObjectInstance> hWallObjects = new ArrayList<ObjectInstance>();
+//            for(TaxiMapWall w:walls){
+//                if(!w.verticalWall){
+//                    hWallObjects.add(w);
+//                }
+//            }
+//            return hWallObjects;
+            return new ArrayList<ObjectInstance>(walls);
         }
-        else if(oclass.equals(TaxiDomain.VWALLCLASS)){
-            List<ObjectInstance> vWallObjects = new ArrayList<ObjectInstance>();
-            for(TaxiMapWall w:walls){
-                if(w.verticalWall){
-                    vWallObjects.add(w);
-                }
-            }
-            return vWallObjects;
-        }
+//        else if(oclass.equals(TaxiDomain.VWALLCLASS)){
+//            List<ObjectInstance> vWallObjects = new ArrayList<ObjectInstance>();
+//            for(TaxiMapWall w:walls){
+//                if(w.verticalWall){
+//                    vWallObjects.add(w);
+//                }
+//            }
+//            return vWallObjects;
+//        }
 
         throw new RuntimeException("Unknown class type " + oclass);
     }
@@ -321,7 +322,7 @@ public class TaxiState implements MutableOOState{
     }
 
     @Override
-    public State copy() {
+    public TaxiState copy() {
         return new TaxiState(walls,passengers,locations,taxi);
     }
 

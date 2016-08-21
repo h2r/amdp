@@ -1,11 +1,12 @@
 package amdp.maxq.framework;
 
+import amdp.maxq.framework.*;
 import amdp.utilities.BoltzmannQPolicyWithCoolingSchedule;
-import burlap.behavior.policy.GreedyDeterministicQPolicy;
 import burlap.behavior.policy.SolverDerivedPolicy;
 import burlap.behavior.singleagent.Episode;
 import burlap.behavior.singleagent.learning.LearningAgent;
 import burlap.behavior.valuefunction.QValue;
+import burlap.debugtools.DPrint;
 import burlap.debugtools.RandomFactory;
 import burlap.mdp.core.action.Action;
 import burlap.mdp.core.state.State;
@@ -16,17 +17,12 @@ import burlap.statehashing.HashableStateFactory;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
-import java.util.List;
-
+import java.util.*;
 
 /**
  * Created by ngopalan on 5/6/16.
  */
-public class MAXQStateAbstractionAgent implements LearningAgent {
+public class MaxQForTesting implements LearningAgent {
 
     //    protected double					epsilon;
     protected Random rand;
@@ -34,16 +30,17 @@ public class MAXQStateAbstractionAgent implements LearningAgent {
     protected double VMax = 0.;
     protected double learningRate = 0.1;
     protected int learningEpisodeCount = 0;
+    public static int debugCode = 235867;
 
     // Map for values
     Map<GroundedTask, HashMap<HashableState, Double>> qValue = new HashMap<GroundedTask, HashMap<HashableState, Double>>();
     //map for completion function
-//    Map<GroundedTask ,HashMap<GroundedTask,HashMap<HashableState, Double>>> C = new HashMap<GroundedTask ,HashMap<GroundedTask,HashMap<HashableState, Double>>>();
+    //    Map<GroundedTask ,HashMap<GroundedTask,HashMap<HashableState, Double>>> C = new HashMap<GroundedTask ,HashMap<GroundedTask,HashMap<HashableState, Double>>>();
     CValuesStore C = new CValuesStore(VMax);
 
     //cTildeMap
     CValuesStore CTilde = new CValuesStore(VMax);
-//    Map<GroundedTask ,HashMap<GroundedTask,HashMap<HashableState, Double>>> CTilde = new HashMap<GroundedTask ,HashMap<GroundedTask,HashMap<HashableState, Double>>>();
+    //    Map<GroundedTask ,HashMap<GroundedTask,HashMap<HashableState, Double>>> CTilde = new HashMap<GroundedTask ,HashMap<GroundedTask,HashMap<HashableState, Double>>>();
 
     //map for storing the QProviders
     HashMap<String, QProviderForMAXQ> qProviderMap = new HashMap<String, QProviderForMAXQ>();
@@ -68,6 +65,12 @@ public class MAXQStateAbstractionAgent implements LearningAgent {
     int highestCompletedTaskNode;
 
     int numberOfBackups = 0;
+    int maxNumberOfBackups = -1;
+    boolean learningStopped = false;
+
+    //TODO: need to add a feature not pick greedily from non-tested actions when not learning!
+
+
 
 
 
@@ -80,15 +83,28 @@ public class MAXQStateAbstractionAgent implements LearningAgent {
      * @param learningRate: learning rate for MAXQ
     //     * @param eps
      */
-    public MAXQStateAbstractionAgent(TaskNode root, HashableStateFactory hashingFactory, double gamma, double learningRate){
-//        this.epsilon = eps;
+    public MaxQForTesting(TaskNode root, HashableStateFactory hashingFactory, double gamma, double learningRate){
+        //        this.epsilon = eps;
         rand = RandomFactory.getMapped(0);
         this.gamma = gamma;
         this.learningRate = learningRate;
         this.root = root;
-//        this.taskNodesInLevels = taskNodesInLevels;
+        //        this.taskNodesInLevels = taskNodesInLevels;
         this.hsf = hashingFactory;
     }
+
+    public MaxQForTesting(TaskNode root, HashableStateFactory hashingFactory, double gamma, double learningRate, int maxBackups){
+        //        this.epsilon = eps;
+        rand = RandomFactory.getMapped(0);
+        this.gamma = gamma;
+        this.learningRate = learningRate;
+        this.root = root;
+        //        this.taskNodesInLevels = taskNodesInLevels;
+        this.hsf = hashingFactory;
+        this.maxNumberOfBackups = maxBackups;
+    }
+
+
 
     public void setRmax(double Rmax){
         this.VMax = Rmax/(1-gamma);
@@ -96,9 +112,9 @@ public class MAXQStateAbstractionAgent implements LearningAgent {
         this.CTilde  = new CValuesStore(VMax);
     }
 
-//    public double getEpsilon() {
-//        return epsilon;
-//    }
+    //    public double getEpsilon() {
+    //        return epsilon;
+    //    }
 
     public double getGamma() {
         return gamma;
@@ -330,11 +346,11 @@ public class MAXQStateAbstractionAgent implements LearningAgent {
 
         if(parentGroundedTask.t.isTaskPrimitive()){
 
-//            if(ea.discountedReturn(1.0)<-6000){
-//                System.out.println("many negative actions being taken!");
-//            }
+            //            if(ea.discountedReturn(1.0)<-6000){
+            //                System.out.println("many negative actions being taken!");
+            //            }
 
-            if(steps > maxSteps && maxSteps != -1){
+            if((steps > maxSteps && maxSteps != -1) || (!freezeLearning && learningStopped)){
                 //if max steps have been taken return empty array!
                 this.stepsDone = true;
                 return new ArrayList<State>();
@@ -364,10 +380,17 @@ public class MAXQStateAbstractionAgent implements LearningAgent {
                 }
                 //TODO: call reward decomposition function here that seperates rewards on a node basis!
 
-                numberOfBackups++;
                 double value = (1 - learningRate) * qValue.get(parentGroundedTask).get(hs)
                         + learningRate * eo.r;
-                qValue.get(parentGroundedTask).put(hs, value);
+
+
+                if((numberOfBackups<maxNumberOfBackups || maxNumberOfBackups==-1)) {
+                    numberOfBackups++;
+                    qValue.get(parentGroundedTask).put(hs, value);
+                }
+                if(numberOfBackups==maxNumberOfBackups && maxNumberOfBackups!=-1){
+                    learningStopped=true;
+                }
             }
 
             //record result
@@ -395,20 +418,20 @@ public class MAXQStateAbstractionAgent implements LearningAgent {
             while(!parentGroundedTask.t.terminal(env.currentObservation(),parentGroundedTask.action)){
                 State startState =env.currentObservation().copy();
 
-//                HashableState hashedStartState  = this.hsf.hashState(startState);
+                //                HashableState hashedStartState  = this.hsf.hashState(startState);
 
                 //get policy and get task from policy!
                 // first set Qprovider
                 QProviderForMAXQ QP = this.qProviderMap.get(parentGroundedTask.getT().getName());
                 QP.setGt(parentGroundedTask);
-//                SolverDerivedPolicy p = policyMap.get(parentGroundedTask.t.getName());
+                //                SolverDerivedPolicy p = policyMap.get(parentGroundedTask.t.getName());
                 SolverDerivedPolicy p;
                 if(!freezeLearning){
                     p = policyMap.get(parentGroundedTask.t.getName());
                 }
                 else {
                     // this happens when testing!
-//                    p = new GreedyDeterministicQPolicy();
+                    //                    p = new GreedyDeterministicQPolicy();
                     p = policyMap.get(parentGroundedTask.t.getName());
                     ((BoltzmannQPolicyWithCoolingSchedule)p).setNoCoolingNextAction(true);
                 }
@@ -459,11 +482,11 @@ public class MAXQStateAbstractionAgent implements LearningAgent {
                         Action a_star = evaluateMaxNode(parentGroundedTask,lastState).getLeft();
 
                         GroundedTask gt_star = this.ActionGroundedTaskMap.get(a_star.actionName());
-//                        int N = 1;
+                        //                        int N = 1;
 
-                        if(gt_star.action.actionName().split(":")[0].equals("navigate")){
-                            System.out.println("here");
-                        }
+//                        if(gt_star.action.actionName().split(":")[0].equals("navigate")){
+//                            System.out.println("here");
+//                        }
 
 
 
@@ -524,13 +547,15 @@ public class MAXQStateAbstractionAgent implements LearningAgent {
                                 }
 
 
-                                numberOfBackups++;
 
-
-                                CTilde.put(parentGroundedTask, currentGroundedSubTask, hashedCurrentState, updateCTildeValue);
-
-
-                                C.put(parentGroundedTask, currentGroundedSubTask, hashedCurrentState, updateCValue);
+                                if((numberOfBackups<maxNumberOfBackups || maxNumberOfBackups==-1)) {
+                                    numberOfBackups++;
+                                    CTilde.put(parentGroundedTask, currentGroundedSubTask, hashedCurrentState, updateCTildeValue);
+                                    C.put(parentGroundedTask, currentGroundedSubTask, hashedCurrentState, updateCValue);
+                                }
+                                if(numberOfBackups==maxNumberOfBackups && maxNumberOfBackups!=-1){
+                                    learningStopped=true;
+                                }
 
                             }
                         }
@@ -547,7 +572,7 @@ public class MAXQStateAbstractionAgent implements LearningAgent {
                     Action a_star = evaluateMaxNode(parentGroundedTask,lastState).getLeft();
 
                     GroundedTask gt_star = this.ActionGroundedTaskMap.get(a_star.actionName());
-//                    int N = 1;
+                    //                    int N = 1;
                     if(((NonPrimitiveTaskNode)parentGroundedTask.getT()).hasHashingFactory()){
                         hashedLastState =  ((NonPrimitiveTaskNode)parentGroundedTask.getT()).hashedState(lastState,gt_star);
                     }
@@ -600,15 +625,16 @@ public class MAXQStateAbstractionAgent implements LearningAgent {
 
                         }
 
-                        numberOfBackups++;
 
-                        CTilde.put(parentGroundedTask, currentGroundedSubTask, hashedCurrentState, updateCTildeValue);
-
-
-                        C.put(parentGroundedTask, currentGroundedSubTask, hashedCurrentState, updateCValue);
-
-
-//                        N++;
+                        if((numberOfBackups<maxNumberOfBackups || maxNumberOfBackups==-1)){
+                            numberOfBackups++;
+                            CTilde.put(parentGroundedTask, currentGroundedSubTask, hashedCurrentState, updateCTildeValue);
+                            C.put(parentGroundedTask, currentGroundedSubTask, hashedCurrentState, updateCValue);
+                        }
+                        if(numberOfBackups==maxNumberOfBackups && maxNumberOfBackups!=-1){
+                            learningStopped=true;
+                        }
+                        //                        N++;
                     }
 
                 }
@@ -625,18 +651,22 @@ public class MAXQStateAbstractionAgent implements LearningAgent {
         int numParams =0;
 
         int CSize = C.numberOfParams();
-        System.out.println("Params in C " + CSize);
+        String str = "Params in C " + CSize;
+        DPrint.cl(debugCode , str);
+
 
 
         int CTildeSize = CTilde.numberOfParams();
-        System.out.println("Params in CTilde " + CTildeSize);
+        str = "Params in CTilde " + CTildeSize;
+        DPrint.cl(debugCode , str);
 
         for(GroundedTask gt : qValue.keySet()){
             numParams += qValue.get(gt).size();
         }
 
         int VSize = numParams;
-        System.out.println("Params in V: " +VSize);
+        str = "Params in V: " +VSize;
+        DPrint.cl(debugCode , str);
 
         return numParams + CTildeSize + CSize;
     }
@@ -653,7 +683,9 @@ public class MAXQStateAbstractionAgent implements LearningAgent {
         this.steps =0;
         this.stepsDone=false;
         Episode ea = new Episode(env.currentObservation());
-        System.out.println(learningEpisodeCount);
+        String str = ""+learningEpisodeCount;
+        DPrint.cl(debugCode , str);
+
         if(!this.freezeLearning){
             this.learningEpisodeCount++;
         }
@@ -662,7 +694,7 @@ public class MAXQStateAbstractionAgent implements LearningAgent {
 
 
 
-        while(!env.isInTerminalState() && (steps < maxSteps || maxSteps == -1)){
+        while(!env.isInTerminalState() && (steps < maxSteps || maxSteps == -1) && !this.stepsDone){
             // there is only one root task node in MAXQ
             GroundedTask gtRoot = ((NonPrimitiveTaskNode)(this.root)).getApplicableGroundedTasks(curState).get(0);
             this.taskNodesStack.add(gtRoot);
@@ -677,5 +709,3 @@ public class MAXQStateAbstractionAgent implements LearningAgent {
         this.VMax = vmax;
     }
 }
-
-

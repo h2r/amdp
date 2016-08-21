@@ -7,16 +7,22 @@ import amdp.amdpframework.TaskNode;
 import amdp.taxi.TaxiDomain;
 import amdp.taxi.TaxiRewardFunction;
 import amdp.taxi.TaxiTerminationFunction;
+import amdp.taxi.TaxiVisualizer;
 import amdp.taxiamdpdomains.taxiamdplevel1.TaxiL1Domain;
 import amdp.taxiamdpdomains.taxiamdplevel1.TaxiL1TerminalFunction;
 import amdp.taxiamdpdomains.taxiamdplevel1.taxil1state.L1StateMapper;
 import amdp.taxiamdpdomains.taxiamdplevel2.TaxiL2Domain;
 import amdp.taxiamdpdomains.taxiamdplevel2.TaxiL2TerminalFunction;
 import amdp.taxiamdpdomains.taxiamdplevel2.taxil2state.L2StateMapper;
+import amdp.taxiamdpdomains.testingtools.BoundedRTDPForTests;
+import amdp.taxiamdpdomains.testingtools.MutableGlobalInteger;
 import burlap.behavior.policy.Policy;
+import burlap.behavior.singleagent.Episode;
+import burlap.behavior.singleagent.auxiliary.EpisodeSequenceVisualizer;
 import burlap.behavior.singleagent.planning.stochastic.rtdp.BoundedRTDP;
 import burlap.behavior.singleagent.planning.stochastic.valueiteration.ValueIteration;
 import burlap.behavior.valuefunction.ConstantValueFunction;
+import burlap.debugtools.DPrint;
 import burlap.debugtools.RandomFactory;
 import burlap.mdp.auxiliary.StateMapping;
 import burlap.mdp.core.Domain;
@@ -30,6 +36,7 @@ import burlap.mdp.singleagent.model.FactoredModel;
 import burlap.mdp.singleagent.model.RewardFunction;
 import burlap.mdp.singleagent.oo.OOSADomain;
 import burlap.statehashing.simple.SimpleHashableStateFactory;
+import burlap.visualizer.Visualizer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,23 +47,44 @@ import java.util.Random;
  */
 public class TaxiAMDPDriver {
 
-    public static List<BoundedRTDP> brtdpList= new ArrayList<BoundedRTDP>();
+    public static List<BoundedRTDPForTests> brtdpList= new ArrayList<BoundedRTDPForTests>();
+//    DPrint.(3214986, false);
+
 
     static int l0Budget = 50;
-    static int l1Budget = 5;
-    static int l2Budget = 5;
+    static int l1Budget = 40;
+    static int l2Budget = 30;
 
-    static int l0Depth = 15;
+    static int l0Depth = 30;
     static int l1Depth = 5;
     static int l2Depth = 15;
+
+    static protected MutableGlobalInteger bellmanBudget = new MutableGlobalInteger(-1);
+
+
+    static int  maxTrajectoryLength = 101;
 
 
     public static void main(String[] args) {
 
+//        DPrint.toggleCode(3214986, false);
         RandomFactory randomFactory = new RandomFactory();
         Random rand = randomFactory.getMapped(0);
 
+        boolean randomStart = false;
 
+        bellmanBudget.setValue(8000);
+
+        for(int i =0;i<args.length;i++){
+            String str = args[i];
+//            System.out.println(str);
+            if(str.equals("-r")){
+                randomStart = Boolean.parseBoolean(args[i+1]);
+            }
+            if(str.equals("-b")){
+                bellmanBudget.setValue(Integer.parseInt(args[i+1]));
+            }
+        }
 
         TerminalFunction tf = new TaxiTerminationFunction();
         RewardFunction rf = new TaxiRewardFunction(1,tf);
@@ -75,7 +103,15 @@ public class TaxiAMDPDriver {
         OOSADomain tdEnv = tdGen.generateDomain();
 
 
-        State startState = TaxiDomain.getRandomClassicState(rand, td, false);
+        State startState = TaxiDomain.getComplexState(false);
+
+//        if(randomStart){
+//            startState = TaxiDomain.getRandomClassicState(rand, td, false);
+//        }
+//        else{
+//            startState = TaxiDomain.getClassicState(td,false);
+//        }
+
 
         TerminalFunction tfL1 = new TaxiL1TerminalFunction();
         RewardFunction rfL1 = new UniformCostRF();
@@ -154,7 +190,46 @@ public class TaxiAMDPDriver {
 
         SimulatedEnvironment envN = new SimulatedEnvironment(tdEnv, startState);
 
-        agent.actUntilTermination(envN,100);
+        Episode e = agent.actUntilTermination(envN,maxTrajectoryLength);
+
+        Visualizer v = TaxiVisualizer.getVisualizer(5, 5);
+        List<Episode> eaList = new ArrayList<Episode>();
+        eaList.add(e);
+        new EpisodeSequenceVisualizer(v, td, eaList);
+
+
+        int count = 0;
+        int count0 =0;
+        int count1 =0;
+        int count2 =0;
+        for(int i=0;i<brtdpList.size();i++){
+            int numUpdates = brtdpList.get(i).getNumberOfBellmanUpdates();
+            count+= numUpdates;
+//			System.out.println("Level: " + brtdpLevelList.get(i) + ", count: " + numUpdates);
+//            if(brtdpList.get(i)==0){
+//                count0 += numUpdates;
+//            }
+//            else if(brtdpList.get(i)==1){
+//                count1 += numUpdates;
+//            }
+//            else{
+//                count2 += numUpdates;
+//            }
+        }
+
+//        System.out.println("actions taken: " + e.actionSequence.size());
+//        System.out.println("rewards: " + e.discountedReturn(1.));
+//        System.out.println("Total updates used: " + count);
+        System.out.println(e.actionSequence.size());
+        System.out.println(e.discountedReturn(1.));
+        System.out.println( count);
+        System.out.println("Total planners used: " + brtdpList.size());
+        System.out.println("Taxi with AMDPs \n Backups by individual planners:");
+        for(BoundedRTDPForTests b:brtdpList){
+            System.out.println(b.getNumberOfBellmanUpdates());
+        }
+        System.out.println("random start state: " + randomStart);
+
 
 
 
@@ -175,14 +250,15 @@ public class TaxiAMDPDriver {
         @Override
         public Policy generatePolicy(State s, GroundedTask groundedTask) {
             l2.setModel(new FactoredModel(((FactoredModel)l2.getModel()).getStateModel(),groundedTask.rewardFunction(), groundedTask.terminalFunction()));
-            BoundedRTDP brtdp = new BoundedRTDP(l2, gamma,  new SimpleHashableStateFactory(false),new ConstantValueFunction(0.),
-                    new ConstantValueFunction(1.), 0.01, 100);
-            Policy p = brtdp.planFromState(s);
-            brtdpList.add(brtdp);
+            BoundedRTDPForTests brtdp = new BoundedRTDPForTests(l2, gamma,  new SimpleHashableStateFactory(false),new ConstantValueFunction(0.),
+                    new ConstantValueFunction(1.), 0.01, l2Budget);
+            brtdp.setRemainingNumberOfBellmanUpdates(bellmanBudget);
+
 
             brtdp.setMaxRolloutDepth(l2Depth);//5
             brtdp.toggleDebugPrinting(false);
-
+            Policy p = brtdp.planFromState(s);
+            brtdpList.add(brtdp);
             return p;
         }
 
@@ -209,10 +285,11 @@ public class TaxiAMDPDriver {
             l1.setModel(new FactoredModel(((FactoredModel)l1.getModel()).getStateModel(),gt.rewardFunction(), gt.terminalFunction()));
 
 
-            BoundedRTDP brtdp = new BoundedRTDP(l1, discount, new SimpleHashableStateFactory(false),
+            BoundedRTDPForTests brtdp = new BoundedRTDPForTests(l1, discount, new SimpleHashableStateFactory(false),
                     new ConstantValueFunction(0.),   new ConstantValueFunction(1.),
                     0.001,
                     l1Budget);//10
+            brtdp.setRemainingNumberOfBellmanUpdates(bellmanBudget);
             brtdpList.add(brtdp);
 
             brtdp.setMaxRolloutDepth(l1Depth);//10
@@ -241,12 +318,13 @@ public class TaxiAMDPDriver {
 
             l0.setModel(new FactoredModel(((FactoredModel)l0.getModel()).getStateModel(),gt.rewardFunction(), gt.terminalFunction()));
 
-            BoundedRTDP brtdp = new BoundedRTDP(l0, discount, new SimpleHashableStateFactory(false),
+            BoundedRTDPForTests brtdp = new BoundedRTDPForTests(l0, discount, new SimpleHashableStateFactory(false),
                     new ConstantValueFunction(0.),
                     new ConstantValueFunction(1.),
                     0.001,
                     l0Budget);//50
 
+            brtdp.setRemainingNumberOfBellmanUpdates(bellmanBudget);
             brtdpList.add(brtdp);
 
             brtdp.setMaxRolloutDepth(l0Depth);//15

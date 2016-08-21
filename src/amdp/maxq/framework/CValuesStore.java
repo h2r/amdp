@@ -1,10 +1,22 @@
 package amdp.maxq.framework;
 
 
+import amdp.utilities.BoltzmannQPolicyWithCoolingSchedule;
+import burlap.behavior.policy.SolverDerivedPolicy;
+import burlap.behavior.singleagent.Episode;
+import burlap.behavior.singleagent.learning.LearningAgent;
+import burlap.behavior.valuefunction.QValue;
+import burlap.debugtools.RandomFactory;
+import burlap.mdp.core.action.Action;
+import burlap.mdp.core.state.State;
+import burlap.mdp.singleagent.environment.Environment;
+import burlap.mdp.singleagent.environment.EnvironmentOutcome;
 import burlap.statehashing.HashableState;
+import burlap.statehashing.HashableStateFactory;
+import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * this class is just a wrapper around MAP to store the C values so get and put operations have a clean implementation
@@ -51,12 +63,13 @@ public class CValuesStore{
             for(GroundedTask cgt : internalMap.get(pgt).keySet()){
                 int temp = internalMap.get(pgt).get(cgt).size();
                 numParams+= temp;
-                System.out.println("Parent task: " + pgt.action.actionName()
-                        + "; Child task: " + cgt.action.actionName() + "; num States: " +temp);
+//                System.out.println("Parent task: " + pgt.action.actionName()
+//                        + "; Child task: " + cgt.action.actionName() + "; num States: " +temp);
             }
         }
         return numParams;
     }
+
 
 
 }

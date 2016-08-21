@@ -15,6 +15,7 @@ import burlap.behavior.policy.PolicyUtils;
 import burlap.behavior.singleagent.Episode;
 import burlap.behavior.singleagent.auxiliary.EpisodeSequenceVisualizer;
 import burlap.behavior.singleagent.learning.tdmethods.QLearning;
+import burlap.debugtools.DPrint;
 import burlap.debugtools.RandomFactory;
 import burlap.mdp.core.TerminalFunction;
 import burlap.mdp.core.action.ActionType;
@@ -46,6 +47,8 @@ public class TaxiMaxQRunner {
 
 
     public static void main(String[] args) {
+
+
 
         RandomFactory randomFactory = new RandomFactory();
         Random rand = randomFactory.getMapped(0);
@@ -130,9 +133,11 @@ public class TaxiMaxQRunner {
 //            State state = TaxiDomain.getClassicState(d, false);
 
             int numberOfTests = 1;
-            int numberOfLearningEpisodes = 1000;
-            int takeModOf = 1;
+            int numberOfLearningEpisodes = 100;
+            int takeModOf = 10;
             int startTest = 200;
+            int numBackups = 32000;
+
 //            int numberOfTests = 1;
 //            int numberOfLearningEpisodes = 10;
 //            int takeModOf = 100;
@@ -162,6 +167,7 @@ public class TaxiMaxQRunner {
                 List<Episode> testEpisodesMAXQ = new ArrayList<Episode>();
 //                MAXQLearningAgent maxqLearningAgent = new MAXQLearningAgent(rootNode, new SimpleHashableStateFactory(), 1.0, 1.0);
                 MAXQStateAbstractionAgent maxqLearningAgent = new MAXQStateAbstractionAgent(rootNode, new SimpleHashableStateFactory(), 1.0, 0.25);
+//                MaxQForTesting maxqLearningAgent = new MaxQForTesting(rootNode, new SimpleHashableStateFactory(), 1.0, 0.25,numBackups);
 //                MAX0LearningAgent maxqLearningAgent = new MAX0LearningAgent(rootNode, new SimpleHashableStateFactory(), 0.95, 0.5);
 //                MAX0FasterLearningAgent maxqLearningAgent = new MAX0FasterLearningAgent(rootNode, new SimpleHashableStateFactory(), 0.95, 0.70);
 //                maxqLearningAgent.setRmax(0.123 * (1 - 0.95));
@@ -209,15 +215,20 @@ public class TaxiMaxQRunner {
                         numberOfActionsMAXQLearning[i][(j / takeModOf) -1] = numActions;
                         System.out.println("i: " + i + " j: " + j + " actions:" + numActions);
                         testEpisodesMAXQ.add(ea1);
+//                        System.out.println("number of backups: "+maxqLearningAgent.getNumberOfBackups());
                     }
                 }
 
                 System.out.println("number of params MAXQQ = " + maxqLearningAgent.numberOfParams());
                 Visualizer v = TaxiVisualizer.getVisualizer(5,5);
-                new EpisodeSequenceVisualizer(v, d, episodesMAXQ);
-//                new EpisodeSequenceVisualizer(v,d,testEpisodesMAXQ);
+//                new EpisodeSequenceVisualizer(v, d, episodesMAXQ);
+                new EpisodeSequenceVisualizer(v,d,testEpisodesMAXQ);
+
+                System.out.println("num backups: " +maxqLearningAgent.getNumberOfBackups());
 
             }
+
+
 
 
 //            for (int i = 0; i < numberOfTests; i++) {

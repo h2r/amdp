@@ -28,9 +28,15 @@ public class BoltzmannQPolicyWithCoolingSchedule implements SolverDerivedPolicy,
     protected QProvider qplanner;
     double								temperature;
     double                              coolingRate = 1.;
+
+
+
     // weather the cooling rate decreases by addition of multiplication
     boolean multiplicativeCoolingRate = true;
     double minValue = Double.MIN_VALUE + 0.0000000001;
+
+
+    boolean noCoolingNextAction = false;
 
 
     /**
@@ -84,6 +90,12 @@ public class BoltzmannQPolicyWithCoolingSchedule implements SolverDerivedPolicy,
         this.coolingRate = coolingRate;
     }
 
+
+    public void setNoCoolingNextAction(boolean noCoolingNextAction) {
+        this.noCoolingNextAction = noCoolingNextAction;
+    }
+
+
     @Override
     public Action action(State s) {
         Action a = PolicyUtils.sampleFromActionDistribution(this, s);
@@ -93,15 +105,16 @@ public class BoltzmannQPolicyWithCoolingSchedule implements SolverDerivedPolicy,
 //        else if(!multiplicativeCoolingRate){
 //            this.temperature=this.temperature - this.coolingRate;
 //        }
-        if(multiplicativeCoolingRate && this.temperature >minValue){
+        if(multiplicativeCoolingRate && this.temperature >minValue && !noCoolingNextAction){
             this.temperature=this.temperature*this.coolingRate;
         }
-        else if(!multiplicativeCoolingRate && this.temperature > minValue){
+        else if(!multiplicativeCoolingRate && this.temperature > minValue&& !noCoolingNextAction){
             this.temperature=this.temperature - this.coolingRate;
         }
-        if(this.temperature< minValue){
+        if(this.temperature< minValue && !noCoolingNextAction){
             this.temperature=minValue;
         }
+        noCoolingNextAction = false;
         return a;
     }
 

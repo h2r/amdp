@@ -27,9 +27,9 @@ public class TaxiMapWall implements ObjectInstance {
     public String name;
 
     /*
-    a variable for book keeping so we have a common class for horizontal and vertical walls
+    a variable for book keeping, true implies the wall object is vertical
      */
-    boolean verticalWall;
+    public boolean verticalWall;
 
     private final static List<Object> keys = Arrays.<Object>asList(VAR_WALLOFFSET, VAR_WALLMIN, VAR_WALLMAX);
 
@@ -43,10 +43,11 @@ public class TaxiMapWall implements ObjectInstance {
 
     @Override
     public String className() {
-        if(verticalWall){
-            return TaxiDomain.VWALLCLASS;
-        }
-        return TaxiDomain.HWALLCLASS;
+//        if(verticalWall){
+//            return TaxiDomain.VWALLCLASS;
+//        }
+//        return TaxiDomain.HWALLCLASS;
+        return TaxiDomain.WALLCLASS;
     }
 
     @Override
@@ -80,6 +81,9 @@ public class TaxiMapWall implements ObjectInstance {
         }
         else if(key.equals(VAR_WALLOFFSET)){
             return wallOffset;
+        }
+        else if(key.equals(VAR_VERTICALWALL)){
+            return verticalWall;
         }
 
         throw new RuntimeException("Unknown key for TaxiMap Wall: " + key);

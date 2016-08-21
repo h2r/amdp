@@ -47,16 +47,18 @@ public class PutTaskNode extends NonPrimitiveTaskNode{
     @Override
     public boolean terminal(State s, Action action) {
         String passName = ((TaxiL2Domain.PutType.PutAction)action).passenger;
-        String location = ((TaxiL2Domain.PutType.PutAction)action).location;
-        StateConditionTest sc =  new GroundedPropSC(new GroundedProp(oosaDomain.propFunction(TaxiL1Domain.PASSENGERATLOCATIONPF), new String[]{passName,location}));
+//        String location = ((TaxiL2Domain.PutType.PutAction)action).location;
+//        StateConditionTest sc =  new GroundedPropSC(new GroundedProp(oosaDomain.propFunction(TaxiL1Domain.PASSENGERATLOCATIONPF), new String[]{passName,location}));
+        StateConditionTest sc =  new GroundedPropSC(new GroundedProp(oosaDomain.propFunction(TaxiL1Domain.PASSENGERATGOALLOCATIONPF), new String[]{passName}));
         return new GoalConditionTF(sc).isTerminal(s);
     }
 
     @Override
     public RewardFunction rewardFunction(Action action) {
         String passName = ((TaxiL2Domain.PutType.PutAction)action).passenger;
-        String location = ((TaxiL2Domain.PutType.PutAction)action).location;
-        StateConditionTest sc =  new GroundedPropSC(new GroundedProp(oosaDomain.propFunction(TaxiL1Domain.PASSENGERATLOCATIONPF), new String[]{passName,location}));
+//        String location = ((TaxiL2Domain.PutType.PutAction)action).location;
+//        StateConditionTest sc =  new GroundedPropSC(new GroundedProp(oosaDomain.propFunction(TaxiL1Domain.PASSENGERATLOCATIONPF), new String[]{passName,location}));
+        StateConditionTest sc =  new GroundedPropSC(new GroundedProp(oosaDomain.propFunction(TaxiL1Domain.PASSENGERATGOALLOCATIONPF), new String[]{passName}));
         return new GoalBasedRF(sc);
     }
 

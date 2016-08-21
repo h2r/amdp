@@ -24,6 +24,8 @@ public class TaxiVisualizer {
 
     Map<String, Color> colourMap = new HashMap<String, Color>();
 
+    static String imagePathNakul = "amdp/data/resources/taxiImages/";
+
 
     private TaxiVisualizer(){
         initializeColours();
@@ -66,8 +68,7 @@ public class TaxiVisualizer {
         oopainter.addObjectClassPainter(TaxiDomain.LOCATIONCLASS, new LocationPainter(w, h, 0, true));
         oopainter.addObjectClassPainter(TaxiDomain.TAXICLASS, new CellPainter(1, Color.gray, w, h));
         oopainter.addObjectClassPainter(TaxiDomain.PASSENGERCLASS, new PassengerPainter(w, h, 1, false));
-        oopainter.addObjectClassPainter(TaxiDomain.HWALLCLASS, new WallPainter(w, h, false));
-        oopainter.addObjectClassPainter(TaxiDomain.VWALLCLASS, new WallPainter(w, h, true));
+        oopainter.addObjectClassPainter(TaxiDomain.WALLCLASS, new WallPainter(w, h));
 
         rl.addStatePainter(oopainter);
 
@@ -329,13 +330,13 @@ public class TaxiVisualizer {
 
         int maxX;
         int maxY;
-        boolean vertical;
+//        boolean vertical;
 
 
-        public WallPainter(int w, int h, boolean vertical){
+        public WallPainter(int w, int h){
             this.maxX = w;
             this.maxY = h;
-            this.vertical = vertical;
+//            this.vertical = vertical;
         }
 
         @Override
@@ -347,6 +348,7 @@ public class TaxiVisualizer {
             int wp = ((TaxiMapWall)ob).wallOffset;
             int e1 = ((TaxiMapWall)ob).wallMin;
             int e2 = ((TaxiMapWall)ob).wallMax;
+            boolean vertical  =((TaxiMapWall)ob).verticalWall;
 
             if(vertical){
                 p0x = p1x = wp;
