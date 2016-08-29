@@ -468,6 +468,22 @@ public class TaxiDomain implements DomainGenerator{
                     for(ObjectInstance p : passengers){
                         int px = ((TaxiPassenger)p).x;
                         int py = ((TaxiPassenger)p).y;
+                        boolean passengerPicked = ((TaxiPassenger) p).pickedUpAtLeastOnce;
+
+                        String goalLocation = ((TaxiPassenger) p).goalLocation;
+
+                        String currentLocation = "";
+                        List<TaxiLocation> locations = ns.locations;
+                        for(TaxiLocation l : locations){
+                            if (l.x==px && l.y==py){
+                                currentLocation = l.colour;
+                                break;
+                            }
+                        }
+
+                        if(currentLocation.equals(goalLocation) && passengerPicked){
+                            continue;
+                        }
 
                         if(tx == px && ty == py ){
                             int passID = ns.passengerInd(((TaxiPassenger)p).name());
@@ -973,6 +989,7 @@ public class TaxiDomain implements DomainGenerator{
     }
 
     public static State getComplexState(boolean usesFuel){
+        //TODO: create a random start state with passengers at different locations
 
         TaxiAgent taxiAgent = new TaxiAgent(TAXICLASS+0,0,3);
 

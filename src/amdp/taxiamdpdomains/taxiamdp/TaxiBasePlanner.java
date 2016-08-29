@@ -65,9 +65,10 @@ public class TaxiBasePlanner {
         RandomFactory randomFactory = new RandomFactory();
         Random rand = randomFactory.getMapped(0);
 
-        boolean randomStart = true;
+        boolean randomStart = false;
+        boolean singlePassenger = true;
 
-        bellmanBudget.setValue(2000);
+        bellmanBudget.setValue(4000);
 
         for(int i =0;i<args.length;i++){
             String str = args[i];
@@ -77,6 +78,9 @@ public class TaxiBasePlanner {
             }
             if(str.equals("-b")){
                 bellmanBudget.setValue(Integer.parseInt(args[i+1]));
+            }
+            if(str.equals("-s")){
+                singlePassenger = Boolean.parseBoolean(args[i+1]);
             }
         }
 
@@ -100,13 +104,25 @@ public class TaxiBasePlanner {
         State startState;
 
         if(randomStart){
-            startState = TaxiDomain.getRandomClassicState(rand, td, false);
+            if(singlePassenger){
+                startState = TaxiDomain.getRandomClassicState(rand, td, false);
+            }
+            else{
+                startState = TaxiDomain.getComplexState(false);
+            }
+
         }
         else{
-            startState = TaxiDomain.getClassicState(td,false);
+            if(singlePassenger) {
+                startState = TaxiDomain.getClassicState(td, false);
+            }
+            else{
+                startState = TaxiDomain.getComplexState(false);
+            }
         }
 
 
+//        startState = TaxiDomain.getComplexState(false);
 
         BoundedRTDPForTests brtdp = new BoundedRTDPForTests(td, 0.99,  new SimpleHashableStateFactory(false),new ConstantValueFunction(0.),
                 new ConstantValueFunction(1.), 0.01, 500);
@@ -139,11 +155,12 @@ public class TaxiBasePlanner {
         System.out.println(e.discountedReturn(1.));
         System.out.println( brtdp.getNumberOfBellmanUpdates());
 //        System.out.println("Total planners used: " + brtdpList.size());
-        System.out.println("Base level Taxi with AMDPs \n Backups by individual planners:");
+        System.out.println("Base level Taxi");
 //        for(BoundedRTDPForTests b:brtdpList){
 //            System.out.println(b.getNumberOfBellmanUpdates());
 //        }
         System.out.println("random start state: " + randomStart);
+        System.out.println("single start state: " + singlePassenger);
 
 
 

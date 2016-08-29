@@ -48,8 +48,6 @@ public class TaxiMaxQTest {
 
     public static void main(String[] args) {
 
-
-
         int debugCode = 12344356;
         RandomFactory randomFactory = new RandomFactory();
         Random rand = randomFactory.getMapped(0);
@@ -57,7 +55,8 @@ public class TaxiMaxQTest {
 
 
         boolean randomStart = false;
-        int bellmanUpdateBudget = 1000;
+        boolean singlePassenger = true;
+        int bellmanUpdateBudget = 256000;
 
         for(int i =0;i<args.length;i++){
             String str = args[i];
@@ -67,6 +66,9 @@ public class TaxiMaxQTest {
             }
             if(str.equals("-b")){
                 bellmanUpdateBudget = Integer.parseInt(args[i+1]);
+            }
+            if(str.equals("-s")){
+                singlePassenger = Boolean.parseBoolean(args[i+1]);
             }
         }
 
@@ -86,8 +88,14 @@ public class TaxiMaxQTest {
 //        TDGen.includeFuel = false;
         final OOSADomain d = TDGen.generateDomain();
 
-        State s = TaxiDomain.getRandomClassicState(rand, d, false);
-
+        State s;
+        if(singlePassenger){
+            //sNew = TaxiDomain.getRandomClassicState(rand, d, false);
+            s = TaxiDomain.getClassicState(d, false);
+        }
+        else{
+            s = TaxiDomain.getComplexState(false);
+        }
 
 
         List<ObjectInstance> passengers = ((TaxiState)s).objectsOfClass(TaxiDomain.PASSENGERCLASS);
@@ -187,7 +195,17 @@ public class TaxiMaxQTest {
             DPrint.cl(debugCode,str);
             str = "-------------------------------------------------------------";
             DPrint.cl(debugCode,str);
-            State sNew = TaxiDomain.getRandomClassicState(rand, d, false);
+            State sNew;// = TaxiDomain.getRandomClassicState(rand, d, false);
+
+                if(singlePassenger){
+                    //sNew = TaxiDomain.getRandomClassicState(rand, d, false);
+                    sNew = TaxiDomain.getClassicState(d, false);
+                }
+                else{
+                    sNew = TaxiDomain.getComplexState(false);
+                }
+
+
 //            State sNew = TaxiDomain.getComplexState(false);
             SimulatedEnvironment envN = new SimulatedEnvironment(d, sNew);
 
@@ -205,11 +223,21 @@ public class TaxiMaxQTest {
         DPrint.cl(debugCode,str);
         State sNew1;
         if(randomStart){
-            sNew1 = TaxiDomain.getRandomClassicState(rand, d, false);
+            if(singlePassenger){
+                sNew1 = TaxiDomain.getRandomClassicState(rand, d, false);
+            }
+            else{
+                sNew1 = TaxiDomain.getComplexState(false);
+            }
+
         }
-        else {
-            sNew1 = TaxiDomain.getClassicState(d,false);
-//            sNew1 = TaxiDomain.getComplexState(false);
+        else{
+            if(singlePassenger) {
+                sNew1 = TaxiDomain.getClassicState(d, false);
+            }
+            else{
+                sNew1 = TaxiDomain.getComplexState(false);
+            }
         }
 
         SimulatedEnvironment envN1 = new SimulatedEnvironment(d, sNew1);
@@ -232,8 +260,9 @@ public class TaxiMaxQTest {
 //        DPrint.cl(debugCode,str);
 //        System.out.println(str);
         System.out.println(maxqLearningAgent.getNumberOfBackups());
-        System.out.println(randomStart);
+        System.out.println("random start: " +randomStart);
         System.out.println("MAXQ!");
+        System.out.println("single start state: " + singlePassenger);
 
         str = "number of params MAXQQ = " + maxqLearningAgent.numberOfParams();
 //        DPrint.cl(debugCode,str);

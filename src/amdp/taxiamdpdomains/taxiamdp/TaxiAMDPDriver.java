@@ -1,9 +1,6 @@
 package amdp.taxiamdpdomains.taxiamdp;
 
-import amdp.amdpframework.AMDPAgent;
-import amdp.amdpframework.AMDPPolicyGenerator;
-import amdp.amdpframework.GroundedTask;
-import amdp.amdpframework.TaskNode;
+import amdp.amdpframework.*;
 import amdp.taxi.TaxiDomain;
 import amdp.taxi.TaxiRewardFunction;
 import amdp.taxi.TaxiTerminationFunction;
@@ -15,21 +12,19 @@ import amdp.taxiamdpdomains.taxiamdplevel2.TaxiL2Domain;
 import amdp.taxiamdpdomains.taxiamdplevel2.TaxiL2TerminalFunction;
 import amdp.taxiamdpdomains.taxiamdplevel2.taxil2state.L2StateMapper;
 import amdp.taxiamdpdomains.testingtools.BoundedRTDPForTests;
+import amdp.taxiamdpdomains.testingtools.GreedyReplan;
 import amdp.taxiamdpdomains.testingtools.MutableGlobalInteger;
 import burlap.behavior.policy.Policy;
 import burlap.behavior.singleagent.Episode;
 import burlap.behavior.singleagent.auxiliary.EpisodeSequenceVisualizer;
-import burlap.behavior.singleagent.planning.stochastic.rtdp.BoundedRTDP;
-import burlap.behavior.singleagent.planning.stochastic.valueiteration.ValueIteration;
 import burlap.behavior.valuefunction.ConstantValueFunction;
+import burlap.behavior.valuefunction.QProvider;
 import burlap.debugtools.DPrint;
 import burlap.debugtools.RandomFactory;
 import burlap.mdp.auxiliary.StateMapping;
-import burlap.mdp.core.Domain;
 import burlap.mdp.core.TerminalFunction;
 import burlap.mdp.core.action.ActionType;
 import burlap.mdp.core.state.State;
-import burlap.mdp.singleagent.SADomain;
 import burlap.mdp.singleagent.common.UniformCostRF;
 import burlap.mdp.singleagent.environment.SimulatedEnvironment;
 import burlap.mdp.singleagent.model.FactoredModel;
@@ -51,9 +46,9 @@ public class TaxiAMDPDriver {
 //    DPrint.(3214986, false);
 
 
-    static int l0Budget = 50;
-    static int l1Budget = 40;
-    static int l2Budget = 30;
+    static int l0Budget = 50;//0.001
+    static int l1Budget = 40;//0.001
+    static int l2Budget = 30;//0.01
 
     static int l0Depth = 30;
     static int l1Depth = 5;
@@ -67,13 +62,14 @@ public class TaxiAMDPDriver {
 
     public static void main(String[] args) {
 
-//        DPrint.toggleCode(3214986, false);
+        DPrint.toggleCode(3214986, false);
         RandomFactory randomFactory = new RandomFactory();
         Random rand = randomFactory.getMapped(0);
 
         boolean randomStart = false;
+        boolean singlePassenger = true;
 
-        bellmanBudget.setValue(8000);
+        bellmanBudget.setValue(4000);
 
         for(int i =0;i<args.length;i++){
             String str = args[i];
@@ -83,6 +79,9 @@ public class TaxiAMDPDriver {
             }
             if(str.equals("-b")){
                 bellmanBudget.setValue(Integer.parseInt(args[i+1]));
+            }
+            if(str.equals("-s")){
+                singlePassenger = Boolean.parseBoolean(args[i+1]);
             }
         }
 
@@ -103,14 +102,25 @@ public class TaxiAMDPDriver {
         OOSADomain tdEnv = tdGen.generateDomain();
 
 
-        State startState = TaxiDomain.getComplexState(false);
+        State startState;// = TaxiDomain.getComplexState(false);
 
-//        if(randomStart){
-//            startState = TaxiDomain.getRandomClassicState(rand, td, false);
-//        }
-//        else{
-//            startState = TaxiDomain.getClassicState(td,false);
-//        }
+        if(randomStart){
+            if(singlePassenger){
+                startState = TaxiDomain.getRandomClassicState(rand, td, false);
+            }
+            else{
+                startState = TaxiDomain.getComplexState(false);
+            }
+
+        }
+        else{
+            if(singlePassenger) {
+                startState = TaxiDomain.getClassicState(td, false);
+            }
+            else{
+                startState = TaxiDomain.getComplexState(false);
+            }
+        }
 
 
         TerminalFunction tfL1 = new TaxiL1TerminalFunction();
@@ -133,10 +143,10 @@ public class TaxiAMDPDriver {
         TerminalFunction tfL2 = new TaxiL2TerminalFunction();
         RewardFunction rfL2 = new UniformCostRF();
 
-        TaxiL2Domain taxiL2DomainGen = new TaxiL2Domain(rfL2, tfL2,rand);
+        TaxiL2Domain tdL2Gen = new TaxiL2Domain(rfL2, tfL2,rand);
 
 
-        OOSADomain tdL2 = taxiL2DomainGen.generateDomain();
+        OOSADomain tdL2 = tdL2Gen.generateDomain();
 
 
         ActionType east = td.getAction(TaxiDomain.ACTION_EAST);
@@ -166,20 +176,34 @@ public class TaxiAMDPDriver {
         TaskNode[] dropOffL1SubTasks = new TaskNode[]{dt};
         TaskNode[] pickupL1SubTasks = new TaskNode[]{pt};
 
-        TaskNode navigateTaskNode = new NavigateTaskNode(navigate,tdL1,td,navigateSubTasks);
-        TaskNode putDownL1TaskNode = new PutDownL1TaskNode(putdownL1,tdL1,td,dropOffL1SubTasks);
-        TaskNode pickupL1TaskNode = new PickupL1TaskNode(pickupL1,tdL1,td,pickupL1SubTasks);
+        TaskNode navigateTaskNode = new NavigateTaskNode(navigate,tdL1Gen.generateDomain(),tdGen.generateDomain(),navigateSubTasks);
+        TaskNode putDownL1TaskNode = new PutDownL1TaskNode(putdownL1,tdL1Gen.generateDomain(),tdGen.generateDomain(),dropOffL1SubTasks);
+        TaskNode pickupL1TaskNode = new PickupL1TaskNode(pickupL1,tdL1Gen.generateDomain(),tdGen.generateDomain(),pickupL1SubTasks);
 
         TaskNode[] getSubTasks = new TaskNode[]{navigateTaskNode, pickupL1TaskNode};
         TaskNode[] putSubTasks = new TaskNode[]{navigateTaskNode, putDownL1TaskNode};
 
-        TaskNode getTaskNode = new GetTaskNode(get, tdL2, tdL1, getSubTasks);
-        TaskNode putTaskNode = new PutTaskNode(put, tdL2, tdL1, putSubTasks);
+        TaskNode getTaskNode = new GetTaskNode(get, tdL2Gen.generateDomain(), tdL1Gen.generateDomain(), getSubTasks);
+        TaskNode putTaskNode = new PutTaskNode(put, tdL2Gen.generateDomain(), tdL1Gen.generateDomain(), putSubTasks);
 
 
         TaskNode[] rootSubTasks = new TaskNode[]{getTaskNode,putTaskNode};
 
         TaskNode root = new RootTaskNode("root",rootSubTasks,tdL2, tfL2,rfL2);
+
+//        BoundedRTDPForTests brtdp = new BoundedRTDPForTests(((NonPrimitiveTaskNode)root).domain(), 0.99,  new SimpleHashableStateFactory(false),new ConstantValueFunction(0.),
+//                new ConstantValueFunction(1.), 0.01, l2Budget);
+//        brtdp.setRemainingNumberOfBellmanUpdates(new MutableGlobalInteger(50));
+//
+//
+//        brtdp.setMaxRolloutDepth(l2Depth);//5
+//        brtdp.toggleDebugPrinting(false);
+//            Policy p = brtdp.planFromState(new L2StateMapper().mapState(new L1StateMapper().mapState(startState)));
+////        brtdpList.add(brtdp);
+//        Episode ea = PolicyUtils.rollout(p, new L2StateMapper().mapState(new L1StateMapper().mapState(startState)), tdL2.getModel());
+//        for (Action a:ea.actionSequence){
+//            System.out.println(a.actionName());
+//        }
 
         List<AMDPPolicyGenerator> pgList = new ArrayList<AMDPPolicyGenerator>();
         pgList.add(0,new l0PolicyGenerator(td));
@@ -192,10 +216,10 @@ public class TaxiAMDPDriver {
 
         Episode e = agent.actUntilTermination(envN,maxTrajectoryLength);
 
-        Visualizer v = TaxiVisualizer.getVisualizer(5, 5);
-        List<Episode> eaList = new ArrayList<Episode>();
-        eaList.add(e);
-        new EpisodeSequenceVisualizer(v, td, eaList);
+//        Visualizer v = TaxiVisualizer.getVisualizer(5, 5);
+//        List<Episode> eaList = new ArrayList<Episode>();
+//        eaList.add(e);
+//        new EpisodeSequenceVisualizer(v, td, eaList);
 
 
         int count = 0;
@@ -249,23 +273,29 @@ public class TaxiAMDPDriver {
 
         @Override
         public Policy generatePolicy(State s, GroundedTask groundedTask) {
+            l2 = ((NonPrimitiveTaskNode)groundedTask.getT()).domain();
             l2.setModel(new FactoredModel(((FactoredModel)l2.getModel()).getStateModel(),groundedTask.rewardFunction(), groundedTask.terminalFunction()));
             BoundedRTDPForTests brtdp = new BoundedRTDPForTests(l2, gamma,  new SimpleHashableStateFactory(false),new ConstantValueFunction(0.),
-                    new ConstantValueFunction(1.), 0.01, l2Budget);
+                    new ConstantValueFunction(1.), 0.1, l2Budget);
             brtdp.setRemainingNumberOfBellmanUpdates(bellmanBudget);
 
 
             brtdp.setMaxRolloutDepth(l2Depth);//5
             brtdp.toggleDebugPrinting(false);
-            Policy p = brtdp.planFromState(s);
+            brtdp.planFromState(s);
             brtdpList.add(brtdp);
-            return p;
+//            return brtdp.planFromState(s);
+            return new GreedyReplan(brtdp);
         }
 
         @Override
         public State generateAbstractState(State s) {
             return sm.mapState(s);
         }
+
+
+        @Override
+        public QProvider getQProvider(State s, GroundedTask groundedTask){return null;};
     }
 
 
@@ -276,25 +306,27 @@ public class TaxiAMDPDriver {
         StateMapping sm = new L1StateMapper();
 
         public l1PolicyGenerator(OOSADomain l2In){
-            l1 = l2In;
+
         }
 
         @Override
         public Policy generatePolicy(State s, GroundedTask gt) {
+            l1 = ((NonPrimitiveTaskNode)gt.getT()).domain();
 
             l1.setModel(new FactoredModel(((FactoredModel)l1.getModel()).getStateModel(),gt.rewardFunction(), gt.terminalFunction()));
 
 
             BoundedRTDPForTests brtdp = new BoundedRTDPForTests(l1, discount, new SimpleHashableStateFactory(false),
                     new ConstantValueFunction(0.),   new ConstantValueFunction(1.),
-                    0.001,
+                    0.01,
                     l1Budget);//10
             brtdp.setRemainingNumberOfBellmanUpdates(bellmanBudget);
             brtdpList.add(brtdp);
 
             brtdp.setMaxRolloutDepth(l1Depth);//10
             brtdp.toggleDebugPrinting(false);
-            return brtdp.planFromState(s);
+            brtdp.planFromState(s);
+            return new GreedyReplan(brtdp);
 
         }
 
@@ -303,25 +335,30 @@ public class TaxiAMDPDriver {
             return sm.mapState(s);
         }
 
+        @Override
+        public QProvider getQProvider(State s, GroundedTask groundedTask){return null;};
+
     }
 
     public static class l0PolicyGenerator implements AMDPPolicyGenerator{
 
-        private OOSADomain l0;
+//        private OOSADomain l0;
         private final double discount = 0.99;
         public l0PolicyGenerator(OOSADomain l0In){
-            l0 = l0In;
+
         }
 
         @Override
         public Policy generatePolicy(State s, GroundedTask gt) {
+
+            OOSADomain l0 = ((NonPrimitiveTaskNode)gt.getT()).domain();
 
             l0.setModel(new FactoredModel(((FactoredModel)l0.getModel()).getStateModel(),gt.rewardFunction(), gt.terminalFunction()));
 
             BoundedRTDPForTests brtdp = new BoundedRTDPForTests(l0, discount, new SimpleHashableStateFactory(false),
                     new ConstantValueFunction(0.),
                     new ConstantValueFunction(1.),
-                    0.001,
+                    0.01,
                     l0Budget);//50
 
             brtdp.setRemainingNumberOfBellmanUpdates(bellmanBudget);
@@ -329,7 +366,8 @@ public class TaxiAMDPDriver {
 
             brtdp.setMaxRolloutDepth(l0Depth);//15
             brtdp.toggleDebugPrinting(false);
-            return brtdp.planFromState(s);
+            brtdp.planFromState(s);
+            return new GreedyReplan(brtdp);
 
 
         }
@@ -338,6 +376,10 @@ public class TaxiAMDPDriver {
         public State generateAbstractState(State s) {
             return null;
         }
+
+
+        @Override
+        public QProvider getQProvider(State s, GroundedTask groundedTask){return null;}
 
 
     }

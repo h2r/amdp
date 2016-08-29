@@ -1,6 +1,7 @@
 package amdp.amdpframework;
 
 import burlap.behavior.policy.Policy;
+import burlap.behavior.valuefunction.QProvider;
 import burlap.mdp.core.state.State;
 
 /**
@@ -18,4 +19,6 @@ public interface AMDPPolicyGenerator {
 	public Policy generatePolicy(State s, GroundedTask groundedTask);
 
 	public State generateAbstractState(State s);
+
+	public QProvider getQProvider(State s, GroundedTask groundedTask);
 }

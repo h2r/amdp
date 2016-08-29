@@ -10,6 +10,7 @@ import burlap.mdp.auxiliary.common.GoalConditionTF;
 import burlap.mdp.auxiliary.stateconditiontest.StateConditionTest;
 import burlap.mdp.core.action.Action;
 import burlap.mdp.core.action.ActionType;
+import burlap.mdp.core.action.UniversalActionType;
 import burlap.mdp.core.oo.propositional.GroundedProp;
 import burlap.mdp.core.state.State;
 import burlap.mdp.singleagent.common.GoalBasedRF;
@@ -32,6 +33,16 @@ public class PickupL1TaskNode extends NonPrimitiveTaskNode{
         this.pickupType = pickupType;
 //        this.oosaDomain = taxiL1Domain;
         this.oosaDomain = taxiL0Domain;
+        this.oosaDomain.clearActionTypes();
+        this.oosaDomain.addActionTypes(
+//                new UniversalActionType(ACTION_NORTH),
+//                new UniversalActionType(ACTION_SOUTH),
+//                new UniversalActionType(ACTION_EAST),
+//                new UniversalActionType(ACTION_WEST),
+//                new UniversalActionType(ACTION_DROPOFF),
+//                new UniversalActionType(ACTION_FILLUP),
+                new UniversalActionType(TaxiDomain.ACTION_PICKUP));
+
         this.childTaskNodes = children;
     }
 

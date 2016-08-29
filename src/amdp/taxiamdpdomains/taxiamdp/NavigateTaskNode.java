@@ -10,6 +10,7 @@ import burlap.mdp.auxiliary.common.GoalConditionTF;
 import burlap.mdp.auxiliary.stateconditiontest.StateConditionTest;
 import burlap.mdp.core.action.Action;
 import burlap.mdp.core.action.ActionType;
+import burlap.mdp.core.action.UniversalActionType;
 import burlap.mdp.core.oo.propositional.GroundedProp;
 import burlap.mdp.core.state.State;
 import burlap.mdp.singleagent.common.GoalBasedRF;
@@ -33,6 +34,16 @@ public class NavigateTaskNode extends NonPrimitiveTaskNode{
         this.navigateType = navigateType;
         this.oosaDomain = taxiL0Domain;
 //        this.l0Domain = taxiL0Domain;
+        this.oosaDomain.clearActionTypes();
+        this.oosaDomain.addActionTypes(
+                new UniversalActionType(TaxiDomain.ACTION_NORTH),
+                new UniversalActionType(TaxiDomain.ACTION_SOUTH),
+                new UniversalActionType(TaxiDomain.ACTION_EAST),
+                new UniversalActionType(TaxiDomain.ACTION_WEST)
+//                new UniversalActionType(TaxiDomain.ACTION_DROPOFF)
+//                new UniversalActionType(ACTION_FILLUP),
+//                new UniversalActionType(TaxiDomain.ACTION_PICKUP)
+        );
         this.childTaskNodes = children;
     }
 

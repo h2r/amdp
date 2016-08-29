@@ -71,10 +71,6 @@ public class MaxQForTesting implements LearningAgent {
     //TODO: need to add a feature not pick greedily from non-tested actions when not learning!
 
 
-
-
-
-
     /**
      * MAXQ learning agent
      * @param root: the root tasknode
