@@ -6,6 +6,7 @@ import burlap.behavior.singleagent.Episode;
 import burlap.debugtools.DPrint;
 import burlap.mdp.core.Domain;
 import burlap.mdp.core.action.Action;
+import burlap.mdp.core.oo.ObjectParameterizedAction;
 import burlap.mdp.core.oo.state.generic.GenericOOState;
 import burlap.mdp.core.state.State;
 import burlap.mdp.singleagent.environment.Environment;
@@ -122,12 +123,13 @@ public class AMDPAgent{
 
 		Policy pi = PolicyGenerators.get(level).generatePolicy(s, gt);
 		if(level !=0){
-			TaskNode[] childTaskNodes = ((NonPrimitiveTaskNode)gt.t).childTaskNodes;
-//					List<GroundedTask> childGroundedTaskList = gt.t.getApplicableGroundedTasks(s);
 
-			addTasksToMap(childTaskNodes, s);
 
 			while(!gt.terminalFunction().isTerminal(s) && (stepCount < maxSteps || maxSteps == -1)){
+				TaskNode[] childTaskNodes = ((NonPrimitiveTaskNode)gt.t).childTaskNodes;
+//					List<GroundedTask> childGroundedTaskList = gt.t.getApplicableGroundedTasks(s);
+
+				addTasksToMap(childTaskNodes, s, level);
 				Action a = pi.action(s);
 				//TODO: get child grounded task
 				String str = StringUtils.repeat("	", maxLevel - level);
@@ -137,7 +139,21 @@ public class AMDPAgent{
 				if(this.onlineStackObserver != null){
 					this.onlineStackObserver.updatePolicyStack(this.policyStack);
 				}
-				decompose(env, level - 1, actionToGroundedTaskMap.get(a.actionName()), maxSteps, ea);
+				String tempStr ="";
+				if(a instanceof ObjectParameterizedAction){
+					String[] params = ((ObjectParameterizedAction)a).getObjectParameters();
+					if(params!=null) {
+						for (int i = 0; i < params.length; i++) {
+							tempStr = tempStr + "_" + params[i];
+						}
+					}
+				}
+				else{
+					tempStr+="_"+a.hashCode();
+				}
+
+
+				decompose(env, level - 1, actionToGroundedTaskMap.get(a.actionName() + tempStr + "_" + level), maxSteps, ea);
 				s = StateStack.get(level);
 			}
 		}
@@ -166,21 +182,41 @@ public class AMDPAgent{
 		
 		if(level < PolicyGenerators.size() -1){
 			// project state up and getting new next state after running a policy to termination
-			StateStack.set(level+1, PolicyGenerators.get(level+1).generateAbstractState(StateStack.get(level)));
+			State projectState = PolicyGenerators.get(level+1).generateAbstractState(StateStack.get(level));
+			String str = StringUtils.repeat("	", maxLevel - level);
+			str = str + level + projectState.toString();
+			DPrint.cl(debugCode , str);
+			str = level + StateStack.get(level).toString();
+			DPrint.cl(debugCode , str);
+
+			StateStack.set(level+1, projectState);
 		}
 
 		this.policyStack.get(level).clear();
 	}
 
-	private void addTasksToMap(TaskNode[] childTaskNodes, State s) {
+	private void addTasksToMap(TaskNode[] childTaskNodes, State s, int level) {
 		List<GroundedTask> childGroundedTaskList = new ArrayList<GroundedTask>();
 		for(int i=0;i<childTaskNodes.length;i++){
 			TaskNode t = childTaskNodes[i];
 			 childGroundedTaskList.addAll(t.getApplicableGroundedTasks(s));
 		}
 		for(GroundedTask gt:childGroundedTaskList){
-			if(!actionToGroundedTaskMap.containsKey(gt.action.actionName())){
-				actionToGroundedTaskMap.put(gt.action.actionName(), gt);
+			Action a =gt.action;
+			String tempStr ="";
+			if(a instanceof ObjectParameterizedAction){
+				String[] params = ((ObjectParameterizedAction)a).getObjectParameters();
+				if(params!=null) {
+					for (int i = 0; i < params.length; i++) {
+						tempStr = tempStr + "_" + params[i];
+					}
+				}
+			}
+			else{
+				tempStr+="_"+a.hashCode();
+			}
+			if(!actionToGroundedTaskMap.containsKey(a.actionName() + tempStr + "_" + level)){
+				actionToGroundedTaskMap.put(a.actionName() + tempStr + "_" + level, gt);
 			}
 		}
 	}

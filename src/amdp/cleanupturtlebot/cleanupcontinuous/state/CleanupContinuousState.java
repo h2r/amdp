@@ -1,4 +1,4 @@
-package amdp.cleanup.state;
+package amdp.cleanupturtlebot.cleanupcontinuous.state;
 
 import amdp.cleanup.CleanupDomain;
 import burlap.mdp.core.oo.state.MutableOOState;
@@ -19,14 +19,14 @@ import static amdp.cleanup.CleanupDomain.*;
  * Created by ngopalan on 8/24/16.
  */
 @ShallowCopyState
-public class CleanupState implements MutableOOState {
+public class CleanupContinuousState implements MutableOOState {
 
-    public CleanupAgent agent;
-    public List<CleanupBlock> blocks = new ArrayList<CleanupBlock>();
-    public List<CleanupDoor> doors = new ArrayList<CleanupDoor>();
-    public List<CleanupRoom> rooms = new ArrayList<CleanupRoom>();
+    public CleanupContinuousAgent agent;
+    public List<CleanupContinuousBlock> blocks = new ArrayList<CleanupContinuousBlock>();
+    public List<CleanupContinuousDoor> doors = new ArrayList<CleanupContinuousDoor>();
+    public List<CleanupContinuousRoom> rooms = new ArrayList<CleanupContinuousRoom>();
 
-    public CleanupState(CleanupAgent agent, List<CleanupBlock> blocks, List<CleanupDoor> doors, List<CleanupRoom> rooms) {
+    public CleanupContinuousState(CleanupContinuousAgent agent, List<CleanupContinuousBlock> blocks, List<CleanupContinuousDoor> doors, List<CleanupContinuousRoom> rooms) {
         this.agent = agent;
         this.blocks = blocks;
         this.doors = doors;
@@ -70,7 +70,7 @@ public class CleanupState implements MutableOOState {
     @Override
     public MutableOOState renameObject(String objectName, String newName) {
         if(objectName.equals(agent.name())){
-            CleanupAgent nagent = agent.copyWithName(newName);
+            CleanupContinuousAgent nagent = agent.copyWithName(newName);
             this.agent= nagent;
             return this;
         }
@@ -78,7 +78,7 @@ public class CleanupState implements MutableOOState {
         int indL = this.roomInd(objectName);
         if(indL != -1) {
             //copy on write
-            CleanupRoom nloc = this.rooms.get(indL).copyWithName(newName);
+            CleanupContinuousRoom nloc = this.rooms.get(indL).copyWithName(newName);
             touchRooms().remove(indL);
             rooms.add(indL, nloc);
             return this;
@@ -87,7 +87,7 @@ public class CleanupState implements MutableOOState {
         int indP = this.doorInd(objectName);
         if(indP != -1){
             //copy on write
-            CleanupDoor nloc = this.doors.get(indP).copyWithName(newName);
+            CleanupContinuousDoor nloc = this.doors.get(indP).copyWithName(newName);
             touchDoors().remove(indP);
             doors.add(indP, nloc);
             return this;
@@ -96,7 +96,7 @@ public class CleanupState implements MutableOOState {
         int indW = this.blockInd(objectName);
         if(indW == -1) {
             //copy on write
-            CleanupBlock nWall = this.blocks.get(indW).copyWithName(newName);
+            CleanupContinuousBlock nWall = this.blocks.get(indW).copyWithName(newName);
             touchBlocks().remove(indW);
             blocks.add(indW, nWall);
             return this;
@@ -113,28 +113,28 @@ public class CleanupState implements MutableOOState {
     @Override
     public ObjectInstance object(String objectName) {
         if(objectName.equals(agent.name())){
-            CleanupAgent nagent = agent.copy();
+            CleanupContinuousAgent nagent = agent.copy();
             return nagent;
         }
 
         int indL = this.roomInd(objectName);
         if(indL != -1) {
             //copy on write
-            CleanupRoom nroom = this.rooms.get(indL).copy();
+            CleanupContinuousRoom nroom = this.rooms.get(indL).copy();
             return nroom;
         }
 
         int indP = this.doorInd(objectName);
         if(indP != -1){
             //copy on write
-            CleanupDoor ndoor = this.doors.get(indP).copy();
+            CleanupContinuousDoor ndoor = this.doors.get(indP).copy();
             return ndoor;
         }
 
         int indW = this.blockInd(objectName);
         if(indW != -1) {
             //copy on write
-            CleanupBlock nBlock = this.blocks.get(indW).copy();
+            CleanupContinuousBlock nBlock = this.blocks.get(indW).copy();
             return nBlock;
         }
 
@@ -175,17 +175,16 @@ public class CleanupState implements MutableOOState {
 
         if(key.obName.equals(agent.name())){
             if(key.obVarKey.equals(VAR_X)){
-                int iv = StateUtilities.stringOrNumber(value).intValue();
-                touchAgent().x = iv;
+//                int iv = StateUtilities.stringOrNumber(value).intValue();
+                touchAgent().x = StateUtilities.stringOrNumber(value).doubleValue();
             }
             else if(key.obVarKey.equals(VAR_Y)){
-                int iv = StateUtilities.stringOrNumber(value).intValue();
-                touchAgent().y = iv;
+//                int iv = StateUtilities.stringOrNumber(value).intValue();
+                touchAgent().y = StateUtilities.stringOrNumber(value).doubleValue();
             }
             else if(key.obVarKey.equals(VAR_DIR)){
                 if(value instanceof String) {
-                    touchAgent().currentDirection = (String) value;
-                    touchAgent().directional = true;
+                    touchAgent().direction = StateUtilities.stringOrNumber(value).doubleValue();
                 }
                 else throw new RuntimeException("Variable value must be String for key VAR_DIR in CleanupContinuousState for Agent Direction: " + value.toString());
             }
@@ -322,8 +321,8 @@ public class CleanupState implements MutableOOState {
     }
 
     @Override
-    public CleanupState copy() {
-        return new CleanupState(agent,blocks,doors,rooms);
+    public CleanupContinuousState copy() {
+        return new CleanupContinuousState(agent,blocks,doors,rooms);
     }
 
     @Override
@@ -331,42 +330,42 @@ public class CleanupState implements MutableOOState {
         return OOStateUtilities.ooStateToString(this);
     }
 
-    public CleanupAgent touchAgent(){
+    public CleanupContinuousAgent touchAgent(){
         this.agent = agent.copy();
         return agent;
     }
 
-    public List<CleanupRoom> touchRooms(){
-        this.rooms = new ArrayList<CleanupRoom>(rooms);
+    public List<CleanupContinuousRoom> touchRooms(){
+        this.rooms = new ArrayList<CleanupContinuousRoom>(rooms);
         return rooms;
     }
 
-    public List<CleanupDoor> touchDoors(){
-        this.doors = new ArrayList<CleanupDoor>(doors);
+    public List<CleanupContinuousDoor> touchDoors(){
+        this.doors = new ArrayList<CleanupContinuousDoor>(doors);
         return doors;
     }
 
-    public List<CleanupBlock> touchBlocks(){
-        this.blocks = new ArrayList<CleanupBlock>(blocks);
+    public List<CleanupContinuousBlock> touchBlocks(){
+        this.blocks = new ArrayList<CleanupContinuousBlock>(blocks);
         return blocks;
     }
 
-    public CleanupBlock touchBlock(int ind){
-        CleanupBlock n = blocks.get(ind).copy();
+    public CleanupContinuousBlock touchBlock(int ind){
+        CleanupContinuousBlock n = blocks.get(ind).copy();
         touchBlocks().remove(ind);
         blocks.add(ind, n);
         return n;
     }
 
-    public CleanupRoom touchRoom(int ind){
-        CleanupRoom n = rooms.get(ind).copy();
+    public CleanupContinuousRoom touchRoom(int ind){
+        CleanupContinuousRoom n = rooms.get(ind).copy();
         touchRooms().remove(ind);
         rooms.add(ind, n);
         return n;
     }
 
-    public CleanupDoor touchDoor(int ind){
-        CleanupDoor n = doors.get(ind).copy();
+    public CleanupContinuousDoor touchDoor(int ind){
+        CleanupContinuousDoor n = doors.get(ind).copy();
         touchDoors().remove(ind);
         doors.add(ind, n);
         return n;

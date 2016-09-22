@@ -2,6 +2,8 @@ package amdp.cleanupamdpdomains.cleanuplevel1;
 
 import amdp.amdpframework.GroundedPropSC;
 import amdp.cleanup.CleanupDomain;
+import amdp.cleanup.state.CleanupDoor;
+import amdp.cleanup.state.CleanupState;
 import amdp.cleanupamdpdomains.cleanuplevel1.state.CleanupL1StateMapper;
 import amdp.cleanupamdpdomains.cleanuplevel1.state.*;
 import amdp.taxiamdpdomains.testingtools.BoundedRTDPForTests;
@@ -237,10 +239,12 @@ public class CleanupL1Domain implements DomainGenerator{
                 return true;
             }
 
-            CleanupDoorL1 doorOb = (CleanupDoorL1) ((CleanupL1State)s).object(door);
-            if(doorOb.canBeLocked){
-                int lockedVal = doorOb.locked;
-                return lockedVal == 2;
+            ObjectInstance doorOb =  ((CleanupState)s).object(door);
+            if(doorOb instanceof CleanupDoor) {
+                if (((CleanupDoor)doorOb).canBeLocked) {
+                    int lockedVal = ((CleanupDoor)doorOb).locked;
+                    return lockedVal == 2;
+                }
             }
 
             return false;
@@ -270,7 +274,7 @@ public class CleanupL1Domain implements DomainGenerator{
 
 
 
-        State s = CleanupDomain.getClassicState(domain,true);
+        State s = CleanupDomain.getClassicState(true);
 
         StateConditionTest sc = new InRegionSC("block0", "room1");
         RewardFunction rf = new GoalBasedRF(sc, 1.);
@@ -281,7 +285,7 @@ public class CleanupL1Domain implements DomainGenerator{
         adgen.setLockProb(lockProb);
         OOSADomain adomain = adgen.generateDomain();
 
-        State as = new CleanupL1StateMapper(adomain).mapState(s);
+        State as = new CleanupL1StateMapper().mapState(s);
 //        System.out.println(as.toString());
 //
 //        List<Action> a = adomain.getAction(ACTION_BLOCK_TO_DOOR).allApplicableActions(as);
@@ -293,7 +297,6 @@ public class CleanupL1Domain implements DomainGenerator{
         if(true) {
 
 
-            //StateReachability.getReachableStates(as, (SADomain)adomain, new SimpleHashableStateFactory(false));
 
             SimpleHashableStateFactory shf = new SimpleHashableStateFactory(false);
             BoundedRTDPForTests planner = new BoundedRTDPForTests(adomain, 0.99, shf,

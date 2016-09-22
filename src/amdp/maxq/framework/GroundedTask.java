@@ -3,6 +3,7 @@ package amdp.maxq.framework;
 import burlap.mdp.core.TerminalFunction;
 import burlap.mdp.core.action.Action;
 import burlap.mdp.core.action.ActionType;
+import burlap.mdp.core.oo.ObjectParameterizedAction;
 import burlap.mdp.core.state.State;
 import burlap.mdp.singleagent.oo.ObjectParameterizedActionType;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -17,6 +18,7 @@ public class GroundedTask {
 
     Action action;
 
+    int level = 0;
 
     public TaskNode getT() {
         return t;
@@ -25,6 +27,7 @@ public class GroundedTask {
     public Action getAction() {
         return action;
     }
+
 
 //    Object params;
 
@@ -37,6 +40,28 @@ public class GroundedTask {
     public GroundedTask(TaskNode t, Action a){
         this.t = t;
         this.action = a;
+    }
+
+    public GroundedTask(TaskNode t, Action a, int level){
+        this.t = t;
+        this.action = a;
+        this.level = level;
+    }
+
+    public void setLevel(int level){
+        this.level  =level;
+    }
+
+    public String actionName(){
+        String s = action.actionName();
+        if(action instanceof ObjectParameterizedAction){
+            String[] params = ((ObjectParameterizedAction)action).getObjectParameters();
+            for(String param :params){
+                s+="_"+param;
+            }
+        }
+        s+=level;
+        return s;
     }
 
     public TerminalFunction getTerminalFunction(){
@@ -66,16 +91,53 @@ public class GroundedTask {
             return false;
         }
 
+
+
         GroundedTask o = (GroundedTask) other;
+
+
+        if(this.level!=o.level){
+                return false;
+        }
 
         // check if same task node
         if (!this.t.getName().equals(o.t.getName())) {
             return false;
         }
 
-        if(!this.action.equals(o.action)){
+//        if(!this.action.equals(o.action)){
+//            return false;
+//        }
+
+        if(!this.action.actionName().equals(o.action.actionName())){
             return false;
         }
+
+        if(this.action instanceof ObjectParameterizedAction){
+            if(!(o.action instanceof ObjectParameterizedAction)){
+                return false;
+            }
+
+            String[] params_this = ((ObjectParameterizedAction)this.action).getObjectParameters();
+            String[] params_other = ((ObjectParameterizedAction)o.action).getObjectParameters();
+
+            if(params_other.length!=params_this.length){
+                return false;
+            }
+
+            boolean flag = true;
+
+            for(int i=0;i<params_other.length;i++){
+                if(!params_other[i].equals(params_this[i])){
+                    flag = false;
+                    break;
+                }
+            }
+
+            return flag;
+        }
+
+
 
 //        if(this.params instanceof Object[]){
 //            if(!(o.params instanceof Object[])){

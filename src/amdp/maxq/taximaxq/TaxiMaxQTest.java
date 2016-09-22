@@ -51,7 +51,7 @@ public class TaxiMaxQTest {
         int debugCode = 12344356;
         RandomFactory randomFactory = new RandomFactory();
         Random rand = randomFactory.getMapped(0);
-        DPrint.toggleCode(debugCode,false);
+        DPrint.toggleCode(debugCode,true);
 
 
         boolean randomStart = false;
@@ -170,7 +170,8 @@ public class TaxiMaxQTest {
         List<Episode> testEpisodesMAXQ = new ArrayList<Episode>();
 //                MAXQLearningAgent maxqLearningAgent = new MAXQLearningAgent(rootNode, new SimpleHashableStateFactory(), 1.0, 1.0);
 //                MAXQStateAbstractionAgent maxqLearningAgent = new MAXQStateAbstractionAgent(rootNode, new SimpleHashableStateFactory(), 1.0, 0.25);
-        MaxQForTesting maxqLearningAgent = new MaxQForTesting(rootNode, new SimpleHashableStateFactory(), 1.0, 0.25, bellmanUpdateBudget);
+//        MaxQForTesting maxqLearningAgent = new MaxQForTesting(rootNode, new SimpleHashableStateFactory(), 1.0, 0.25, bellmanUpdateBudget);
+        MAXQCleanupTesting maxqLearningAgent = new MAXQCleanupTesting(rootNode, new SimpleHashableStateFactory(), 1.0, 0.25, bellmanUpdateBudget);
 //                MAX0LearningAgent maxqLearningAgent = new MAX0LearningAgent(rootNode, new SimpleHashableStateFactory(), 0.95, 0.5);
 //                MAX0FasterLearningAgent maxqLearningAgent = new MAX0FasterLearningAgent(rootNode, new SimpleHashableStateFactory(), 0.95, 0.70);
 //                maxqLearningAgent.setRmax(0.123 * (1 - 0.95));

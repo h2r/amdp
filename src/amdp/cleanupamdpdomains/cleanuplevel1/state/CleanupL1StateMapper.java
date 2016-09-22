@@ -15,7 +15,7 @@ import java.util.List;
  */
 public class CleanupL1StateMapper implements StateMapping{
 
-    public CleanupL1StateMapper(OOSADomain l1) {
+    public CleanupL1StateMapper() {
     }
 
     @Override
@@ -42,7 +42,7 @@ public class CleanupL1StateMapper implements StateMapping{
         }
 
 
-        CleanupAgentL1 aagent = new CleanupAgentL1("agent", inRegion);
+        CleanupAgentL1 aagent = new CleanupAgentL1(agent.name(), inRegion);
 
 
 
@@ -71,7 +71,7 @@ public class CleanupL1StateMapper implements StateMapping{
             CleanupRoom blockInRoom = CleanupDomain.roomContainingPoint(s, bx, by);
 
             String blockInRegion;
-            if(inRoom != null){
+            if(blockInRoom != null){
                 blockInRegion = blockInRoom.name();
             }
             else{

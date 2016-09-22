@@ -155,7 +155,7 @@ public class CleanupL2State  implements MutableOOState {
                 if(value instanceof String) {
                     touchAgent().inRegion = (String) value;
                 }
-                else throw new RuntimeException("Variable value must be String for key VAR_DIR in CleanupState for Agent Direction: " + value.toString());
+                else throw new RuntimeException("Variable value must be String for key VAR_DIR in CleanupContinuousState for Agent Direction: " + value.toString());
             }
             else{
                 throw new RuntimeException("Unknown variable key in Cleanup State for Agent: " + variableKey);
@@ -169,7 +169,7 @@ public class CleanupL2State  implements MutableOOState {
                 if(value instanceof String) {
                     touchRoom(indL).colour = (String) value;
                 }
-                else throw new RuntimeException("Variable value must be String for key VAR_COLOUR in CleanupState for Room colour: " + value.toString());
+                else throw new RuntimeException("Variable value must be String for key VAR_COLOUR in CleanupContinuousState for Room colour: " + value.toString());
             }
             else{
                 throw new RuntimeException("Unknown variable key in Cleanup State for Room: " + variableKey);
@@ -186,19 +186,19 @@ public class CleanupL2State  implements MutableOOState {
                 if(value instanceof String) {
                     touchBlock(indB).colour = (String) value;
                 }
-                else throw new RuntimeException("Variable value must be String for key VAR_COLOUR in CleanupState for Block colour: " + value.toString());
+                else throw new RuntimeException("Variable value must be String for key VAR_COLOUR in CleanupContinuousState for Block colour: " + value.toString());
             }
             else if(key.obVarKey.equals(CleanupDomain.VAR_SHAPE)){
                 if(value instanceof String) {
                     touchBlock(indB).shape = (String) value;
                 }
-                else throw new RuntimeException("Variable value must be String for key VAR_SHAPE in CleanupState for Block shape: " + value.toString());
+                else throw new RuntimeException("Variable value must be String for key VAR_SHAPE in CleanupContinuousState for Block shape: " + value.toString());
             }
             else if(key.obVarKey.equals(VAR_IN_REGION)){
                 if(value instanceof String) {
                     touchBlock(indB).inRegion = (String) value;
                 }
-                else throw new RuntimeException("Variable value must be String for key VAR_IN_REGION in CleanupState for Block region: " + value.toString());
+                else throw new RuntimeException("Variable value must be String for key VAR_IN_REGION in CleanupContinuousState for Block region: " + value.toString());
             }
             else{
                 throw new RuntimeException("Unknown variable key in Cleanup State for Block: " + variableKey);

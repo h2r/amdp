@@ -167,7 +167,7 @@ public class CleanupL2Domain implements DomainGenerator {
 
 
 
-        State s = CleanupDomain.getClassicState(domain,true);
+        State s = CleanupDomain.getClassicState(true);
 
         StateConditionTest sc = new CleanupL1Domain.InRegionSC("block0", "room1");
         RewardFunction rf = new GoalBasedRF(sc, 1.);
@@ -178,7 +178,7 @@ public class CleanupL2Domain implements DomainGenerator {
         adgen.setLockProb(lockProb);
         OOSADomain adomain = adgen.generateDomain();
 
-        State as = new CleanupL1StateMapper(adomain).mapState(s);
+        State as = new CleanupL1StateMapper().mapState(s);
 //        System.out.println(as.toString());
 //
 //        List<Action> a = adomain.getAction(ACTION_BLOCK_TO_DOOR).allApplicableActions(as);

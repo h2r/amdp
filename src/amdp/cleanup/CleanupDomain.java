@@ -564,12 +564,73 @@ public class CleanupDomain implements DomainGenerator {
 
 
 
+    public static State getState(boolean includeDirectionAttribute, boolean lockableDoors, int numObjects, int numRooms){
 
-    public static State getClassicState(Domain domain, boolean includeDirectionAttribute){
+        // these doors can be locked
+        // the number of objects
 
-        CleanupRoom r1 = new CleanupRoom("room0",4, 0, 0, 8,"red");
-        CleanupRoom r2 = new CleanupRoom("room1",8, 0, 4, 4, "green");
-        CleanupRoom r3 = new CleanupRoom("room2", 8, 4, 4, 8, "blue");
+        int y1 = 3;
+        int y2 = 7;
+        int y3 = 12;
+
+        int x1 = 4;
+        int x2 = 8;
+        int x3 = 12;
+
+
+        CleanupRoom r1 = new CleanupRoom(CLASS_ROOM+0,y2, x1, 0, x2, "red");
+        CleanupRoom r2 = new CleanupRoom(CLASS_ROOM+1, y2, 0, y1, x1, "blue");
+        CleanupRoom r3 = new CleanupRoom(CLASS_ROOM+2, y3, 0, y2, x3, "green");
+        CleanupRoom r4 = new CleanupRoom(CLASS_ROOM+3, y2, x2, 0, x3, "yellow");
+        List<CleanupRoom> rooms = new ArrayList<CleanupRoom>();
+        rooms.add(r1);
+
+        rooms.add(r3);
+        rooms.add(r4);
+        if(numRooms>=4){
+            rooms.add(r2);
+        }
+
+        CleanupDoor d1 = new CleanupDoor(CLASS_DOOR+0,0,1, x2, 1, x2,lockableDoors);
+        CleanupDoor d2 = new CleanupDoor(CLASS_DOOR+1,0,5, x1, 5, x1,lockableDoors);
+        CleanupDoor d3 = new CleanupDoor(CLASS_DOOR+2,0,y2, 2, y2, 2,lockableDoors);
+        CleanupDoor d4 = new CleanupDoor(CLASS_DOOR+3,0,y2, 10, y2, 10,lockableDoors);
+        List<CleanupDoor> doors = new ArrayList<CleanupDoor>();
+        doors.add(d1);
+        doors.add(d4);
+        if(numRooms>=4){
+            doors.add(d2);
+            doors.add(d3);
+        }
+
+        CleanupAgent agent = new CleanupAgent(CLASS_AGENT+0, 7, 1);
+        if(includeDirectionAttribute){
+            agent.directional = true;
+            agent.currentDirection = "south";
+        }
+
+        CleanupBlock block1 = new CleanupBlock(CLASS_BLOCK+0,5, 4,"chair", "blue");
+        CleanupBlock block2 = new CleanupBlock(CLASS_BLOCK+1,6,10,"basket", "red");
+        CleanupBlock block3 = new CleanupBlock(CLASS_BLOCK+2,2,10,"bag", "magenta");
+
+        List<CleanupBlock> blocks = new ArrayList<CleanupBlock>();
+        blocks.add(block1);
+
+        if(numObjects>=2)        blocks.add(block2);
+        if(numObjects>=3)        blocks.add(block3);
+
+
+        CleanupState s = new CleanupState(agent,blocks, doors, rooms);
+        return s;
+
+    }
+
+
+    public static State getClassicState(boolean includeDirectionAttribute){
+
+        CleanupRoom r1 = new CleanupRoom(CLASS_ROOM+0,4, 0, 0, 8,"red");
+        CleanupRoom r2 = new CleanupRoom(CLASS_ROOM+1,8, 0, 4, 4, "green");
+        CleanupRoom r3 = new CleanupRoom(CLASS_ROOM+2, 8, 4, 4, 8, "blue");
         List<CleanupRoom> rooms = new ArrayList<CleanupRoom>();
         rooms.add(r1);
         rooms.add(r2);
@@ -578,8 +639,8 @@ public class CleanupDomain implements DomainGenerator {
 //        setRoom(s, 1, 8, 0, 4, 4, "green");
 //        setRoom(s, 2, 8, 4, 4, 8, "blue");
 
-        CleanupDoor d1 = new CleanupDoor("door0",0,4, 6, 4, 6,false);
-        CleanupDoor d2 = new CleanupDoor("door1",0,4, 2, 4, 2,false);
+        CleanupDoor d1 = new CleanupDoor(CLASS_DOOR+0,0,4, 6, 4, 6,false);
+        CleanupDoor d2 = new CleanupDoor(CLASS_DOOR+1,0,4, 2, 4, 2,false);
         List<CleanupDoor> doors = new ArrayList<CleanupDoor>();
         doors.add(d1);
         doors.add(d2);
@@ -588,13 +649,13 @@ public class CleanupDomain implements DomainGenerator {
 //        setDoor(s, 1, 4, 2, 4, 2);
 
 
-        CleanupAgent agent = new CleanupAgent("agent", 6, 6);
+        CleanupAgent agent = new CleanupAgent(CLASS_AGENT+0, 6, 6);
         if(includeDirectionAttribute){
             agent.directional = true;
             agent.currentDirection = "south";
         }
 
-        CleanupBlock block1 = new CleanupBlock("block0",2,2,"basket", "red");
+        CleanupBlock block1 = new CleanupBlock(CLASS_BLOCK+0,2,2,"basket", "red");
         List<CleanupBlock> blocks = new ArrayList<CleanupBlock>();
         blocks.add(block1);
 
@@ -665,7 +726,7 @@ public class CleanupDomain implements DomainGenerator {
             dgen.setLockProbability(lockProb);
             OOSADomain domain = dgen.generateDomain();
 
-            State s = CleanupDomain.getClassicState(domain, true);
+            State s = CleanupDomain.getClassicState(true);
 
             FixedDoorCleanupEnv env = new FixedDoorCleanupEnv(domain, s);
             EnvironmentOutcome eo0 = env.executeAction(domain.getAction(ACTION_NORTH).allApplicableActions(s).get(0));
@@ -686,7 +747,7 @@ public class CleanupDomain implements DomainGenerator {
         }
 
 
-        if(true){
+        if(false){
             double lockProb = 0.5;
 
 //            StateConditionTest sc = new GroundedPropSC(new GroundedProp(domain.getPropFunction(CleanupWorld.PF_BLOCK_IN_ROOM),  new String[]{"block0", "room1"}));
@@ -710,7 +771,7 @@ public class CleanupDomain implements DomainGenerator {
             dgen.setLockProbability(lockProb);
             OOSADomain domain = dgen.generateDomain();
 
-            State s = CleanupDomain.getClassicState(domain, true);
+            State s = CleanupDomain.getClassicState(true);
 
 
 
@@ -734,7 +795,7 @@ public class CleanupDomain implements DomainGenerator {
             //		System.out.println(ea.getState(0).toString());
             new EpisodeSequenceVisualizer(v, domain, Arrays.asList(ea));
         }
-        if(false){
+        if(true){
 
 
 
@@ -746,7 +807,7 @@ public class CleanupDomain implements DomainGenerator {
             dgen.setLockProbability(0.5);
             OOSADomain domain = dgen.generateDomain();
 
-            State s = CleanupDomain.getClassicState(domain, true);
+            State s = CleanupDomain.getClassicState(true);
 
 			/*ObjectInstance b2 = new ObjectInstance(domain.getObjectClass(CLASSBLOCK), CLASSBLOCK+1);
 		s.addObject(b2);

@@ -1,6 +1,7 @@
 package amdp.cleanup.state;
 
 
+import burlap.mdp.core.oo.state.OOStateUtilities;
 import burlap.mdp.core.oo.state.ObjectInstance;
 import burlap.mdp.core.state.State;
 import burlap.mdp.core.state.annotations.DeepCopyState;
@@ -107,5 +108,11 @@ public class CleanupAgent implements ObjectInstance {
         return (this.directional==that.directional) && (this.x==that.x)
                 && (this.y==that.y) && (this.currentDirection.equals(that.currentDirection))
                 && (this.name == that.name());
+    }
+
+
+    @Override
+    public String toString() {
+        return OOStateUtilities.objectInstanceToString(this);
     }
 }
