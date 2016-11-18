@@ -51,7 +51,7 @@ public class CleanupContinuousModel implements FullStateModel {
     public static double rightEdgeAngle = -Math.atan(rangeForTurnCollisionChecksWidth/rangeForTurnCollisionChecksLength);
 
     public static double deltaMove = 0.1;
-    public static double deltaTheta = 0.1;//Math.PI/16;//0.001;
+    public static double deltaTheta = Math.PI/4;//0.15;//Math.PI/16;//0.001;
 
     public CleanupContinuousModel(Random rand, double lockProb){
         this.rand = rand;

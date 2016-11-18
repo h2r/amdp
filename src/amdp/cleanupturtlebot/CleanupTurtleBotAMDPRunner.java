@@ -21,6 +21,7 @@ import amdp.cleanupturtlebot.cleanupcontinuous.CleanupContinuousVisualiser;
 import amdp.cleanupturtlebot.cleanupcontinuous.state.CleanupContinuousState;
 import amdp.cleanupturtlebot.cleanupl0discrete.CleanupTurtleBotL0Domain;
 import amdp.cleanupturtlebot.cleanupl0discrete.state.CleanupContinuousToDiscreteStateMapper;
+import amdp.cleanupturtlebot.robotturtlebot.TurtleBotEnvironment;
 import amdp.taxiamdpdomains.testingtools.BoundedRTDPForTests;
 import amdp.taxiamdpdomains.testingtools.GreedyReplan;
 import amdp.taxiamdpdomains.testingtools.MutableGlobalInteger;
@@ -50,11 +51,16 @@ import burlap.mdp.singleagent.environment.SimulatedEnvironment;
 import burlap.mdp.singleagent.model.FactoredModel;
 import burlap.mdp.singleagent.model.RewardFunction;
 import burlap.mdp.singleagent.oo.OOSADomain;
+import burlap.ros.actionpub.RepeatingActionPublisher;
 import burlap.statehashing.simple.SimpleHashableStateFactory;
 import burlap.visualizer.Visualizer;
 import org.apache.commons.lang3.tuple.MutablePair;
+import ros.msgs.geometry_msgs.Twist;
+import ros.msgs.geometry_msgs.Vector3;
 
 import java.util.*;
+
+import static amdp.cleanupturtlebot.cleanupcontinuous.CleanupContinuousDomain.*;
 
 /**
  * Created by ngopalan on 9/12/16.
@@ -268,10 +274,10 @@ public class CleanupTurtleBotAMDPRunner {
 
         //Action types
 
-        ActionType fwd = domain.getAction(CleanupContinuousDomain.ACTION_MOVE_FORWARD);
-        ActionType back = domain.getAction(CleanupContinuousDomain.ACTION_MOVE_BACK);
-        ActionType turncw = domain.getAction(CleanupContinuousDomain.ACTION_TURN_CW);
-        ActionType turnccw = domain.getAction(CleanupContinuousDomain.ACTION_TURN_CCW);
+        ActionType fwd = domain.getAction(ACTION_MOVE_FORWARD);
+        ActionType back = domain.getAction(ACTION_MOVE_BACK);
+        ActionType turncw = domain.getAction(ACTION_TURN_CW);
+        ActionType turnccw = domain.getAction(ACTION_TURN_CCW);
         // pull is assumed true
 //        ActionType pull = domain.getAction(CleanupDomain.ACTION_PULL);
 
@@ -334,50 +340,90 @@ public class CleanupTurtleBotAMDPRunner {
 
         AMDPAgent agent = new AMDPAgent(gtRoot, pgList);
 
+
+        if(false) {
+
 //        SimulatedEnvironment envN = new SimulatedEnvironment(dgen.generateDomain(), s);
 
-        SimulatedEnvironment env = new SimulatedEnvironment(dgen.generateDomain(), s);
+            SimulatedEnvironment env = new SimulatedEnvironment(dgen.generateDomain(), s);
 //        if(rooms==3) {
 //            env.addLockedDoor("door0");
 //        }
 
 
-        Episode e = agent.actUntilTermination(env, 30000);
+            Episode e = agent.actUntilTermination(env, 30000);
 
-        long tEnd = System.currentTimeMillis();
-        long tDelta = tEnd - tStart;
-        double elapsedSeconds = tDelta / 1000.0;
-        System.out.println("time: " + tDelta + "  " + elapsedSeconds);
-        Visualizer v = CleanupContinuousVisualiser.getVisualizer("amdp/data/resources/robotImages");
-        //		System.out.println(ea.getState(0).toString());
-        new EpisodeSequenceVisualizer(v, domain, Arrays.asList(e));
+            long tEnd = System.currentTimeMillis();
+            long tDelta = tEnd - tStart;
+            double elapsedSeconds = tDelta / 1000.0;
+            System.out.println("time: " + tDelta + "  " + elapsedSeconds);
+            Visualizer v = CleanupContinuousVisualiser.getVisualizer("amdp/data/resources/robotImages");
+            //		System.out.println(ea.getState(0).toString());
+            new EpisodeSequenceVisualizer(v, domain, Arrays.asList(e));
 
-        System.out.println(e.actionSequence.size());
-        System.out.println(e.discountedReturn(1.));
-        //TODO: add counters to count updates!
+            System.out.println(e.actionSequence.size());
+            System.out.println(e.discountedReturn(1.));
+            //TODO: add counters to count updates!
 
-        int count = 0;
-        for (int i = 0; i < brtdpList.size(); i++) {
-            int numUpdates = brtdpList.get(i).getNumberOfBellmanUpdates();
-            count += numUpdates;
-        }
+            int count = 0;
+            for (int i = 0; i < brtdpList.size(); i++) {
+                int numUpdates = brtdpList.get(i).getNumberOfBellmanUpdates();
+                count += numUpdates;
+            }
 
-        System.out.println(count);
+            System.out.println(count);
 //        System.out.println( brtd.getNumberOfBellmanUpdates());
 //        System.out.println("Total planners used: " + brtdpList.size());
-        System.out.println("AMDP Cleanup");
-        System.out.println("room number: " + rooms);
-        System.out.println("backups: " + totalBudget);
+            System.out.println("AMDP Cleanup");
+            System.out.println("room number: " + rooms);
+            System.out.println("backups: " + totalBudget);
 
 
-        System.out.println("Total planners used: " + brtdpList.size());
+            System.out.println("Total planners used: " + brtdpList.size());
 //        System.out.println("CleanUp with AMDPs \n Backups by individual planners:");
-        System.out.println("CleanUp with AMDPs \n Backups by individual planners:");
-        for (BoundedRTDPForTests b : brtdpList) {
-            System.out.println(b.getNumberOfBellmanUpdates());
+            System.out.println("CleanUp with AMDPs \n Backups by individual planners:");
+            for (BoundedRTDPForTests b : brtdpList) {
+                System.out.println(b.getNumberOfBellmanUpdates());
+            }
+
         }
+        else{
+//            CleanupContinuousState s = (CleanupContinuousState)CleanupContinuousDomain.getClassicState(true);
+
+            System.out.println("state original: " + s.toString());
+
+            String actionTopic = "/mobile_base/commands/velocity"; //set this to the appropriate topic for your robot!
+            String actionMsg = "geometry_msgs/Twist";
+
+            //3.28084
+
+            //define the relevant twist messages that we'll use for our actions
+            Twist fTwist = new Twist(new Vector3(0.1,0,0.), new Vector3()); //forward
+            Twist bTwist = new Twist(new Vector3(-0.1,0,0.), new Vector3()); //backward
+            Twist rTwist = new Twist(new Vector3(), new Vector3(0,0,-0.5)); //clockwise rotate
+            Twist rccwTwist = new Twist(new Vector3(), new Vector3(0,0,0.5)); //counter-clockwise rotate
+
+            String rosURI  = "ws://192.168.160.162:9090";
+            TurtleBotEnvironment tb_env = new TurtleBotEnvironment(rosURI, (CleanupContinuousState)s);
+
+            System.out.println(tb_env.currentObservation().toString());
+
+            int period = 500; //publish every 500 milliseconds...
+            int nPublishes = 1; //...for 5 times for each action execution...
+            boolean sync = true; //...and use synchronized action execution
+            tb_env.setActionPublisher(ACTION_MOVE_FORWARD, new RepeatingActionPublisher(actionTopic, actionMsg, tb_env.getRosBridge(), fTwist, period, nPublishes, sync));
+            tb_env.setActionPublisher(ACTION_MOVE_BACK, new RepeatingActionPublisher(actionTopic, actionMsg, tb_env.getRosBridge(), bTwist, period, nPublishes, sync));
+            tb_env.setActionPublisher(ACTION_TURN_CW, new RepeatingActionPublisher(actionTopic, actionMsg, tb_env.getRosBridge(), rTwist, period, nPublishes, sync));
+            tb_env.setActionPublisher(ACTION_TURN_CCW, new RepeatingActionPublisher(actionTopic, actionMsg, tb_env.getRosBridge(), rccwTwist, period, nPublishes, sync));
 
 
+            Episode e = agent.actUntilTermination(tb_env, 70);
+
+            Visualizer v = CleanupContinuousVisualiser.getVisualizer("amdp/data/resources/robotImages");
+            //		System.out.println(ea.getState(0).toString());
+            new EpisodeSequenceVisualizer(v, domain, Arrays.asList(e));
+            System.out.println("steps:" + e.numTimeSteps());
+        }
 
 
 
@@ -629,15 +675,15 @@ public class CleanupTurtleBotAMDPRunner {
                         double angDistToPoint = CleanupContinuousDomain.signedAngularDistance(sTemp.agent.direction,angleMap.get(dirToStart));
                         if(Math.abs(angDistToPoint)> CleanupContinuousDomain.smallerRangeForDirectionChecks){
                             if(angDistToPoint<0.){
-                                return l0.getAction(CleanupContinuousDomain.ACTION_TURN_CCW).allApplicableActions(s).get(0);
+                                return l0.getAction(ACTION_TURN_CCW).allApplicableActions(s).get(0);
                             }
                             else {
-                                return l0.getAction(CleanupContinuousDomain.ACTION_TURN_CW).allApplicableActions(s).get(0);
+                                return l0.getAction(ACTION_TURN_CW).allApplicableActions(s).get(0);
                             }
                         }
 
 
-                        return l0.getAction(CleanupContinuousDomain.ACTION_MOVE_FORWARD).allApplicableActions(s).get(0);
+                        return l0.getAction(ACTION_MOVE_FORWARD).allApplicableActions(s).get(0);
                     }
                     else if(gtTemp.getAction().actionName().equals(CleanupTurtleBotL0Domain.ACTION_MOVE_BACK)){
 //                        MutablePair<Integer,Integer> goal = ((CleanupTurtleBotL0Domain.MoveForwardType.MoveForwardAction)gtTemp.getAction()).goalLocation();
@@ -646,21 +692,21 @@ public class CleanupTurtleBotAMDPRunner {
                         double signedDist = CleanupContinuousDomain.signedAngularDistance(sTemp.agent.direction,angleMap.get(dir));
                         if(Math.abs(signedDist)< CleanupContinuousDomain.smallerRangeForDirectionChecks){
                             if(signedDist<0.){
-                                return l0.getAction(CleanupContinuousDomain.ACTION_TURN_CCW).allApplicableActions(s).get(0);
+                                return l0.getAction(ACTION_TURN_CCW).allApplicableActions(s).get(0);
                             }
                             else {
-                                return l0.getAction(CleanupContinuousDomain.ACTION_TURN_CW).allApplicableActions(s).get(0);
+                                return l0.getAction(ACTION_TURN_CW).allApplicableActions(s).get(0);
                             }
                         }
-                        return l0.getAction(CleanupContinuousDomain.ACTION_MOVE_BACK).allApplicableActions(s).get(0);
+                        return l0.getAction(ACTION_MOVE_BACK).allApplicableActions(s).get(0);
                     }
                     else if(gtTemp.getAction().actionName().equals(CleanupTurtleBotL0Domain.ACTION_TURN_CW)){
 //                        MutablePair<Integer,Integer> goal = ((CleanupTurtleBotL0Domain.MoveForwardType.MoveForwardAction)gtTemp.getAction()).goalLocation();
-                        return l0.getAction(CleanupContinuousDomain.ACTION_TURN_CW).allApplicableActions(s).get(0);
+                        return l0.getAction(ACTION_TURN_CW).allApplicableActions(s).get(0);
                     }
                     else if(gtTemp.getAction().actionName().equals(CleanupTurtleBotL0Domain.ACTION_TURN_CCW)){
 //                        MutablePair<Integer,Integer> goal = ((CleanupTurtleBotL0Domain.MoveForwardType.MoveForwardAction)gtTemp.getAction()).goalLocation();
-                        return l0.getAction(CleanupContinuousDomain.ACTION_TURN_CCW).allApplicableActions(s).get(0);
+                        return l0.getAction(ACTION_TURN_CCW).allApplicableActions(s).get(0);
                     }
                     return null;
                 }

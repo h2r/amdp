@@ -5,6 +5,7 @@ import amdp.cleanup.CleanupVisualiser;
 import amdp.cleanup.FixedDoorCleanupEnv;
 //import amdp.cleanupturtlebot.cleanupl0discrete.state.*;
 import amdp.cleanupturtlebot.cleanupcontinuous.state.*;
+import amdp.cleanupturtlebot.robotturtlebot.TurtleBotEnvironment;
 import burlap.behavior.policy.Policy;
 import burlap.behavior.policy.PolicyUtils;
 import burlap.behavior.singleagent.Episode;
@@ -31,6 +32,7 @@ import burlap.mdp.singleagent.environment.SimulatedEnvironment;
 import burlap.mdp.singleagent.model.FactoredModel;
 import burlap.mdp.singleagent.model.RewardFunction;
 import burlap.mdp.singleagent.oo.OOSADomain;
+import burlap.ros.RosEnvironment;
 import burlap.shell.visual.VisualExplorer;
 import burlap.statehashing.simple.SimpleHashableStateFactory;
 import burlap.visualizer.Visualizer;
@@ -128,13 +130,13 @@ public class CleanupContinuousDomain implements DomainGenerator {
 
     // we check half a block
     // this can be lowered to .05 too, 0.1 = 5 degrees so 10 degree error in total.
-    public static double							rangeForDirectionChecks = .05;
+    public static double							rangeForDirectionChecks = .2;
 
 
 
     // we check half a block
     // this can be lowered to .05 too, 0.1 = 5 degrees so 10 degree error in total.
-    public static double							smallerRangeForDirectionChecks = .05;
+    public static double							smallerRangeForDirectionChecks = .2;
 
 
     // agent cell check distance
@@ -1126,22 +1128,31 @@ public class CleanupContinuousDomain implements DomainGenerator {
             dgen.setLockProbability(0.5);
             OOSADomain domain = dgen.generateDomain();
 
-            State s = CleanupContinuousDomain.getClassicState(true);
+            CleanupContinuousState s = (CleanupContinuousState)CleanupContinuousDomain.getClassicState(true);
+
+            System.out.println("state original: " + s.toString());
+
+            String rosURI  = "ws://192.168.160.162:9090";
+            TurtleBotEnvironment tb_env = new TurtleBotEnvironment(rosURI, s);
+
+            System.out.println(tb_env.currentObservation().toString());
 
 			/*ObjectInstance b2 = new ObjectInstance(domain.getObjectClass(CLASSBLOCK), CLASSBLOCK+1);
 		s.addObject(b2);
 		setBlock(s, 1, 3, 2, "moon", "red");*/
 
-            Visualizer v = CleanupContinuousVisualiser.getVisualizer("amdp/data/resources/robotImages");
-            VisualExplorer exp = new VisualExplorer(domain, v, s);
+            if(true) {
+                Visualizer v = CleanupContinuousVisualiser.getVisualizer("amdp/data/resources/robotImages");
+                VisualExplorer exp = new VisualExplorer(domain, v, s);
 
-            exp.addKeyAction("w", ACTION_MOVE_FORWARD,"");
-            exp.addKeyAction("s", ACTION_MOVE_BACK,"");
-            exp.addKeyAction("d", ACTION_TURN_CW,"");
-            exp.addKeyAction("a", ACTION_TURN_CCW,"");
+                exp.addKeyAction("w", ACTION_MOVE_FORWARD, "");
+                exp.addKeyAction("s", ACTION_MOVE_BACK, "");
+                exp.addKeyAction("d", ACTION_TURN_CW, "");
+                exp.addKeyAction("a", ACTION_TURN_CCW, "");
 //            exp.addKeyAction("r", ACTION_PULL,"");
 
-            exp.initGUI();
+                exp.initGUI();
+            }
 
 //            List<StateTransitionProb> tps = domain.getAction(ACTION_SOUTH).getAssociatedGroundedAction().getTransitions(s);
 //            for(TransitionProbability tp : tps){

@@ -29,13 +29,13 @@ public class CleanupContinuousAgent implements ObjectInstance {
     public final static List<Object> keys = Arrays.<Object>asList(VAR_X, VAR_Y, VAR_DIR, VAR_LENGTH, VAR_WIDTH);
 
 
-    public CleanupContinuousAgent(String name, double x, double y, double startDirection, double length, double width){
+    public CleanupContinuousAgent(String name, double x, double y, double direction, double length, double width){
         this.name = name;
         this.x= x;
         this.y= y;
         this.length=length;
         this.width= width;
-        this.direction = startDirection;
+        this.direction = direction;
     }
 
     @Override
