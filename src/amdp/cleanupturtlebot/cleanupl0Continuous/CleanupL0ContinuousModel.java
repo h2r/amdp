@@ -1,7 +1,8 @@
-package amdp.cleanupturtlebot.cleanupl0discrete;
+package amdp.cleanupturtlebot.cleanupl0Continuous;
 
 //import amdp.cleanupturtlebot.cleanupl0discrete.state.*;
-import amdp.cleanup.state.*;
+//import amdp.cleanup.state.*;
+import amdp.cleanupturtlebot.cleanupl0Continuous.state.*;
 import burlap.mdp.core.StateTransitionProb;
 import burlap.mdp.core.action.Action;
 import burlap.mdp.core.oo.state.ObjectInstance;
@@ -13,18 +14,32 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
-import static amdp.cleanupturtlebot.cleanupl0discrete.CleanupTurtleBotL0Domain.*;
+import static amdp.cleanupturtlebot.cleanupl0Continuous.CleanupContinuousGridL0Domain.*;
 
 /**
  * Created by ngopalan on 8/27/16.
  */
-public class CleanupTurtleBotModel implements FullStateModel {
+public class CleanupL0ContinuousModel implements FullStateModel {
     private static Random rand;
     private static double lockProb = 0.5;
 
-    public CleanupTurtleBotModel(Random rand, double lockProb){
+
+
+    private double moveDelta = 1.;
+    private double wallDelta = 1.;
+
+    public CleanupL0ContinuousModel(Random rand, double lockProb){
         this.rand = rand;
         this.lockProb = lockProb;
+    }
+
+
+    public void setMoveDelta(double moveDelta) {
+        this.moveDelta = moveDelta;
+    }
+
+    public void setWallDelta(double wallDelta) {
+        this.wallDelta = wallDelta;
     }
 
     // the easiest planning is by the rotate and move commands
@@ -37,41 +52,20 @@ public class CleanupTurtleBotModel implements FullStateModel {
         int actionInd = actionInd(a.actionName());
         if(actionInd<4){
             if(actionInd==0){
-                //forward
-                int dx = 0;
-                int dy = 1;
+
                 return moveForward(ns);
-                // if north then conditional for current direction - if facing north then just move
-                // else turn and when turning check for walls if walls then can't turn north
-                // now check for boxes boxes in the one neighbourhood, is collision possible?
-
-                //check for walls for the turn get the shortest direction...
-                //check for blocks in the move, in the gripper and outside of the gripper
-
-//                return move(ns,dx,dy);
             }
             else if(actionInd==1){
                 //back
-//                int dx = 0;
-//                int dy = -1;
-//                return move(ns,dx,dy);
                 return moveBackward(ns);
             }
             else if(actionInd==2){
                 //turn cw
-//                int dx = 1;
-//                int dy = 0;
-//                return move(ns,dx,dy);
-//                return turnClockwiseReal(ns);
                 return turnClockwise(ns);
 
             }
             else if(actionInd==3){
                 //turn ccw
-//                int dx = -1;
-//                int dy = 0;
-//                return move(ns,dx,dy);
-//                return turnClockwiseReal(ns);
                 return turnCounterClockwise(ns);
 
             }
@@ -167,34 +161,34 @@ public class CleanupTurtleBotModel implements FullStateModel {
 
         CleanupState ns = ((CleanupState) state);
 
-        CleanupAgent agent = ns.touchAgent();
-        int ax = agent.x;
-        int ay = agent.y;
+        CleanupGridContinuousAgent agent = ns.touchAgent();
+        double ax = agent.x;
+        double ay = agent.y;
 
         String dir = agent.currentDirection;
 
-        int xdelta = 0;
-        int ydelta = 0;
-        int wallXdelta = 0;
-        int wallYdelta = 0;
+        double xdelta = 0;
+        double ydelta = 0;
+        double wallXdelta = 0;
+        double wallYdelta = 0;
 
 
 
         if(dir.equals("north")){
-            ydelta = 1;
-            wallYdelta = 2;
+            ydelta = moveDelta;
+            wallYdelta = 2*wallDelta;
         }
         else if(dir.equals("south")){
-            ydelta = -1;
-            wallYdelta = -2;
+            ydelta = -1 * moveDelta;
+            wallYdelta = -2 * wallDelta;
         }
         else if(dir.equals("east")){
-            xdelta = 1;
-            wallXdelta = +2;
+            xdelta = moveDelta;
+            wallXdelta = +2 * wallDelta;
         }
         else if(dir.equals("west")){
-            xdelta = -1;
-            wallXdelta = -2;
+            xdelta = -1 * moveDelta;
+            wallXdelta = -2 * wallDelta;
         }
         else if(dir.equals("notCardinal")){
             xdelta = 0;
@@ -205,13 +199,13 @@ public class CleanupTurtleBotModel implements FullStateModel {
         }
 
         // check for wall at x+2 and block at x+1 and move!
-        int nx = ax+xdelta;
-        int ny = ay+ydelta;
+        double nx = ax+xdelta;
+        double ny = ay+ydelta;
         // get new position
 
         // check for walls 2 ahead!
-        int nwx = ax+wallXdelta;
-        int nwy = ay+wallYdelta;
+        double nwx = ax+wallXdelta;
+        double nwy = ay+wallYdelta;
 
         //ObjectInstance roomContaining = roomContainingPoint(s, ax, ay);
         CleanupRoom roomContaining = (CleanupRoom)regionContainingPoint(ns.objectsOfClass(CLASS_ROOM), ax, ay, true);
@@ -219,23 +213,41 @@ public class CleanupTurtleBotModel implements FullStateModel {
         CleanupDoor conflictDoor = null;
 
         boolean permissibleMove = false;
-        CleanupBlock pushedBlockOld = blockAtPoint(ns, nx, ny);
+
+        CleanupGridContinuousBlock pushedBlockOld = blockAtPoint(ns, nx, ny);
 
 
         boolean pathClear = true;
 
-        if(blockAtPoint(ns, nx, ny) != null){
+        if(pushedBlockOld!=null) {
+            if (dir.equals("north") || dir.equals("south")) {
+                if (Math.abs(pushedBlockOld.x - agent.x) > 0.4) {
+                    pushedBlockOld = null;
+                }
+            } else {
+                if (Math.abs(pushedBlockOld.y - agent.y) > 0.4) {
+                    pushedBlockOld = null;
+                }
+            }
+
             if(blockAtPoint(ns, nwx, nwy) != null){
-                pathClear = false;
+                if(!blockAtPoint(ns, nwx, nwy).equals(blockAtPoint(ns, nx, ny))){
+                    pathClear = false;
+                }
             }
         }
 
 
-        if(!wallAt(ns, roomContaining, nwx, nwy) && pathClear){//(blockAtPoint(ns, nwx, nwy) == null && blockAtPoint(ns, nx, ny) != null)){
+//        if(blockAtPoint(ns, nx, ny) != null){
+//
+//        }
+
+
+        if(!wallAt(ns, roomContaining, (int)nwx, (int)nwy) && pathClear){//(blockAtPoint(ns, nwx, nwy) == null && blockAtPoint(ns, nx, ny) != null)){
 
 
             //is there a possible door that can be locked?
-            CleanupDoor doorAtNewPointOld = doorContainingPoint(ns, nwx, nwy);
+            CleanupDoor doorAtNewPointOld = doorContainingPoint(ns, (int)nwx, (int)nwy);
             if(doorAtNewPointOld != null){
                 CleanupDoor doorAtNewPoint = ns.touchDoor(ns.doorInd(doorAtNewPointOld.name()));
                 if(doorAtNewPoint.canBeLocked) {
@@ -245,12 +257,12 @@ public class CleanupTurtleBotModel implements FullStateModel {
             }
 
             if(pushedBlockOld != null) {
-                CleanupBlock pushedBlock = ns.touchBlock(ns.blockInd(pushedBlockOld.name()));
-                int bx = pushedBlock.x;
-                int by = pushedBlock.y;
+                CleanupGridContinuousBlock pushedBlock = ns.touchBlock(ns.blockInd(pushedBlockOld.name()));
+                double bx = pushedBlock.x;
+                double by = pushedBlock.y;
 
-                int nbx = bx + xdelta;
-                int nby = by + ydelta;
+                double nbx = bx + xdelta;
+                double nby = by + ydelta;
                 pushedBlock.x = nbx;
                 pushedBlock.y = nby;
             }
@@ -310,43 +322,43 @@ public class CleanupTurtleBotModel implements FullStateModel {
 
         CleanupState ns = ((CleanupState) state);
 
-        CleanupAgent agent = ns.touchAgent();
-        int ax = agent.x;
-        int ay = agent.y;
+        CleanupGridContinuousAgent agent = ns.touchAgent();
+        double ax = agent.x;
+        double ay = agent.y;
 
         String dir = agent.currentDirection;
 
-        int xdelta = 0;
-        int ydelta = 0;
-//        int wallXdelta = 0;
-//        int wallYdelta = 0;
+        double xdelta = 0;
+        double ydelta = 0;
+//        double wallXdelta = 0;
+//        double wallYdelta = 0;
 
         if(dir.equals("north")){
-            ydelta = -1;
+            ydelta = -1*moveDelta;
 //            wallYdelta = 2;
         }
         else if(dir.equals("south")){
-            ydelta = 1;
+            ydelta = 1*moveDelta;
 //            wallYdelta = -2;
         }
         else if(dir.equals("east")){
-            xdelta = -1;
+            xdelta = -1*moveDelta;
 //            wallXdelta = +2;
         }
         else if(dir.equals("west")){
-            xdelta = 1;
+            xdelta = 1*moveDelta;
 //            wallXdelta = -2;
         }
         else if(dir.equals("notCardinal")){
-            xdelta = 0;
+            xdelta = 0.;
         }
         else{
             throw new RuntimeException("Error, cannot move because of unknown direction index: " + dir);
         }
 
         // check for wall at x+2 and block at x+1 and move!
-        int nx = ax+xdelta;
-        int ny = ay+ydelta;
+        double  nx = ax+xdelta;
+        double ny = ay+ydelta;
         // get new position
 
 //        // check for walls 2 ahead!
@@ -359,22 +371,22 @@ public class CleanupTurtleBotModel implements FullStateModel {
         CleanupDoor conflictDoor = null;
 
         boolean permissibleMove = false;
-        CleanupBlock pushedBlockOld = blockAtPoint(ns, nx, ny);
+        CleanupGridContinuousBlock pushedBlockOld = blockAtPoint(ns, nx, ny);
 
 
         if(pushedBlockOld != null){
-            CleanupBlock pushedBlock = ns.touchBlock(ns.blockInd(pushedBlockOld.name()));
-            int bx = pushedBlock.x;
-            int by = pushedBlock.y;
+            CleanupGridContinuousBlock pushedBlock = ns.touchBlock(ns.blockInd(pushedBlockOld.name()));
+            double bx = pushedBlock.x;
+            double by = pushedBlock.y;
 
-            int nbx = bx + xdelta;
-            int nby = by + ydelta;
+            double nbx = bx + xdelta;
+            double nby = by + ydelta;
 
-            if(!wallAt(ns, roomContaining, nbx, nby) && blockAtPoint(ns, nbx, nby) == null){
+            if(!wallAt(ns, roomContaining, (int)nbx, (int)nby) && blockAtPoint(ns, nbx, nby) == null){
 
 
                 //is there a possible door that can be locked?
-                CleanupDoor doorAtNewPointOld = doorContainingPoint(ns, nbx, nby);
+                CleanupDoor doorAtNewPointOld = doorContainingPoint(ns, (int)nbx, (int)nby);
                 if(doorAtNewPointOld != null){
                     CleanupDoor doorAtNewPoint = ns.touchDoor(ns.doorInd(doorAtNewPointOld.name()));
                     if(doorAtNewPoint.canBeLocked) {
@@ -391,7 +403,7 @@ public class CleanupTurtleBotModel implements FullStateModel {
             }
 
         }
-        else if(!wallAt(ns, roomContaining, nx, ny)){
+        else if(!wallAt(ns, roomContaining, (int)nx, (int)ny)){
             permissibleMove = true;
         }
 
@@ -399,7 +411,7 @@ public class CleanupTurtleBotModel implements FullStateModel {
 
 
             //if doors are lockable, we must check whether there is special handling
-            ObjectInstance doorAtNewPointOld = doorContainingPoint(ns, nx, ny);
+            ObjectInstance doorAtNewPointOld = doorContainingPoint(ns, (int)nx, (int)ny);
 
             if(doorAtNewPointOld != null){
                 CleanupDoor doorAtNewPoint = ns.touchDoor(ns.doorInd(doorAtNewPointOld.name()));
@@ -455,9 +467,9 @@ public class CleanupTurtleBotModel implements FullStateModel {
 
         CleanupState ns = ((CleanupState) state);
 
-        CleanupAgent agent = ns.touchAgent();
-        int ax = agent.x;
-        int ay = agent.y;
+        CleanupGridContinuousAgent agent = ns.touchAgent();
+        double ax = agent.x;
+        double ay = agent.y;
 
         String dir = agent.currentDirection;
 
@@ -469,8 +481,8 @@ public class CleanupTurtleBotModel implements FullStateModel {
 //        int wallXdelta = 0;
 //        int wallYdelta = 0;
 
-        List<Integer> xposForCollision = new ArrayList<Integer>();
-        List<Integer> yposForCollision = new ArrayList<Integer>();
+        List<Double> xposForCollision = new ArrayList<Double>();
+        List<Double> yposForCollision = new ArrayList<Double>();
 
         if(dir.equals("notCardinal")){
             //x and y remain the same dir moves to north and return don't move blocks or anything for now
@@ -542,8 +554,8 @@ public class CleanupTurtleBotModel implements FullStateModel {
         }
         else {
             for (int i = 0; i < 2; i++) {
-                int xCheck = xposForCollision.get(i);
-                int yCheck = yposForCollision.get(i);
+                int xCheck = xposForCollision.get(i).intValue();
+                int yCheck = yposForCollision.get(i).intValue();
 
 
                 if (wallAt(ns, roomContaining, xCheck, yCheck) || blockAtPoint(ns, xCheck, yCheck) != null) {
@@ -554,9 +566,9 @@ public class CleanupTurtleBotModel implements FullStateModel {
         }
         if(possibleMove){
             // check for block
-            CleanupBlock block  = blockAtPoint(ns, ax+ currentBlockLocXDelta, ay+currentBlockLocYDelta);
+            CleanupGridContinuousBlock block  = blockAtPoint(ns, ax+ currentBlockLocXDelta, ay+currentBlockLocYDelta);
             if(block!=null){
-                CleanupBlock pushedBlock = ns.touchBlock(ns.blockInd(block.name()));
+                CleanupGridContinuousBlock pushedBlock = ns.touchBlock(ns.blockInd(block.name()));
                 pushedBlock.x = pushedBlock.x + bxdelta;
                 pushedBlock.y = pushedBlock.y + bydelta;
 
@@ -602,9 +614,9 @@ public class CleanupTurtleBotModel implements FullStateModel {
 
         CleanupState ns = ((CleanupState) state);
 
-        CleanupAgent agent = ns.touchAgent();
-        int ax = agent.x;
-        int ay = agent.y;
+        CleanupGridContinuousAgent agent = ns.touchAgent();
+        double ax = agent.x;
+        double ay = agent.y;
 
         String dir = agent.currentDirection;
 
@@ -616,8 +628,8 @@ public class CleanupTurtleBotModel implements FullStateModel {
 //        int wallXdelta = 0;
 //        int wallYdelta = 0;
 
-        List<Integer> xposForCollision = new ArrayList<Integer>();
-        List<Integer> yposForCollision = new ArrayList<Integer>();
+        List<Double> xposForCollision = new ArrayList<>();
+        List<Double> yposForCollision = new ArrayList<>();
 
 
         if(dir.equals("notCardinal")){
@@ -690,8 +702,8 @@ public class CleanupTurtleBotModel implements FullStateModel {
         }
         else {
             for (int i = 0; i < 2; i++) {
-                int xCheck = xposForCollision.get(i);
-                int yCheck = yposForCollision.get(i);
+                int xCheck = xposForCollision.get(i).intValue();
+                int yCheck = yposForCollision.get(i).intValue();
 
                 // check if block here - if block then move in the direction of move
 
@@ -705,9 +717,9 @@ public class CleanupTurtleBotModel implements FullStateModel {
         }
         if(possibleMove){
             // check for block
-            CleanupBlock block  = blockAtPoint(ns, ax+ currentBlockLocXDelta, ay+currentBlockLocYDelta);
+            CleanupGridContinuousBlock block  = blockAtPoint(ns, ax+ currentBlockLocXDelta, ay+currentBlockLocYDelta);
             if(block!=null){
-                CleanupBlock pushedBlock = ns.touchBlock(ns.blockInd(block.name()));
+                CleanupGridContinuousBlock pushedBlock = ns.touchBlock(ns.blockInd(block.name()));
                 pushedBlock.x = pushedBlock.x + bxdelta;
                 pushedBlock.y = pushedBlock.y + bydelta;
 
@@ -754,9 +766,9 @@ public class CleanupTurtleBotModel implements FullStateModel {
 
         CleanupState ns = ((CleanupState) state);
 
-        CleanupAgent agent = ns.touchAgent();
-        int ax = agent.x;
-        int ay = agent.y;
+        CleanupGridContinuousAgent agent = ns.touchAgent();
+        double ax = agent.x;
+        double ay = agent.y;
 
         String dir = agent.currentDirection;
 
@@ -768,11 +780,11 @@ public class CleanupTurtleBotModel implements FullStateModel {
 //        int wallXdelta = 0;
 //        int wallYdelta = 0;
 
-        List<Integer> xposForCollision = new ArrayList<Integer>();
-        List<Integer> yposForCollision = new ArrayList<Integer>();
+        List<Double> xposForCollision = new ArrayList<>();
+        List<Double> yposForCollision = new ArrayList<>();
 
-        int blockOnTheSideFinalPositionX = 0;
-        int blockOnTheSideFinalPositionY = 0;
+        double blockOnTheSideFinalPositionX = 0;
+        double blockOnTheSideFinalPositionY = 0;
 
         if (dir.equals("north")) {
             // going west
@@ -853,17 +865,17 @@ public class CleanupTurtleBotModel implements FullStateModel {
 
         boolean blocksInBothLocations = true;
 
-        List<CleanupBlock> blocksOnTheSide = new ArrayList<CleanupBlock>();
+        List<CleanupGridContinuousBlock> blocksOnTheSide = new ArrayList<CleanupGridContinuousBlock>();
 
         for(int i=0;i<2;i++){
-            int xCheck = xposForCollision.get(i);
-            int yCheck = yposForCollision.get(i);
+            int xCheck = xposForCollision.get(i).intValue();
+            int yCheck = yposForCollision.get(i).intValue();
 
             // check if block here - if block then move in the direction of move
 
             // if east west then move all blocks to
 
-            CleanupBlock bTemp = blockAtPoint(ns, xCheck, yCheck);
+            CleanupGridContinuousBlock bTemp = blockAtPoint(ns, xCheck, yCheck);
             if(bTemp!=null){
                 blocksOnTheSide.add(bTemp);
             }
@@ -883,12 +895,12 @@ public class CleanupTurtleBotModel implements FullStateModel {
 
         if(possibleMove){
             // check for block
-            CleanupBlock block  = blockAtPoint(ns, ax+ currentBlockLocXDelta, ay+currentBlockLocYDelta);
+            CleanupGridContinuousBlock block  = blockAtPoint(ns, ax+ currentBlockLocXDelta, ay+currentBlockLocYDelta);
 
             // move block
 
             if(block!=null){
-                CleanupBlock pushedBlock = ns.touchBlock(ns.blockInd(block.name()));
+                CleanupGridContinuousBlock pushedBlock = ns.touchBlock(ns.blockInd(block.name()));
                 pushedBlock.x = pushedBlock.x + bxdelta;
                 pushedBlock.y = pushedBlock.y + bydelta;
 
@@ -899,7 +911,7 @@ public class CleanupTurtleBotModel implements FullStateModel {
 
 
             if(blocksOnTheSide.size()>0){
-                CleanupBlock pushedBlock = ns.touchBlock(ns.blockInd(blocksOnTheSide.get(0).name()));
+                CleanupGridContinuousBlock pushedBlock = ns.touchBlock(ns.blockInd(blocksOnTheSide.get(0).name()));
                 pushedBlock.x = blockOnTheSideFinalPositionX;
                 pushedBlock.y = blockOnTheSideFinalPositionY;
             }
@@ -943,9 +955,9 @@ public class CleanupTurtleBotModel implements FullStateModel {
 
         CleanupState ns = ((CleanupState) state);
 
-        CleanupAgent agent = ns.touchAgent();
-        int ax = agent.x;
-        int ay = agent.y;
+        CleanupGridContinuousAgent agent = ns.touchAgent();
+        double ax = agent.x;
+        double ay = agent.y;
 
         String dir = agent.currentDirection;
 
@@ -957,12 +969,12 @@ public class CleanupTurtleBotModel implements FullStateModel {
 //        int wallXdelta = 0;
 //        int wallYdelta = 0;
 
-        List<Integer> xposForCollision = new ArrayList<Integer>();
-        List<Integer> yposForCollision = new ArrayList<Integer>();
+        List<Double> xposForCollision = new ArrayList<>();
+        List<Double> yposForCollision = new ArrayList<>();
 
         // block on the side final position
-        int blockOnTheSideFinalPositionX = 0;
-        int blockOnTheSideFinalPositionY = 0;
+        double blockOnTheSideFinalPositionX = 0;
+        double blockOnTheSideFinalPositionY = 0;
 
         if (dir.equals("north")) {
             // going east
@@ -1044,13 +1056,13 @@ public class CleanupTurtleBotModel implements FullStateModel {
 
         boolean blocksInBothLocations = true;
 
-        List<CleanupBlock> blocksOnTheSide = new ArrayList<CleanupBlock>();
+        List<CleanupGridContinuousBlock> blocksOnTheSide = new ArrayList<CleanupGridContinuousBlock>();
 
         for(int i=0;i<2;i++){
-            int xCheck = xposForCollision.get(i);
-            int yCheck = yposForCollision.get(i);
+            int xCheck = xposForCollision.get(i).intValue();
+            int yCheck = yposForCollision.get(i).intValue();
 
-            CleanupBlock bTemp = blockAtPoint(ns, xCheck, yCheck);
+            CleanupGridContinuousBlock bTemp = blockAtPoint(ns, xCheck, yCheck);
             if(bTemp!=null){
                 blocksOnTheSide.add(bTemp);
             }
@@ -1071,9 +1083,9 @@ public class CleanupTurtleBotModel implements FullStateModel {
 
         if(possibleMove){
             // check for block
-            CleanupBlock block  = blockAtPoint(ns, ax+ currentBlockLocXDelta, ay+currentBlockLocYDelta);
+            CleanupGridContinuousBlock block  = blockAtPoint(ns, ax+ currentBlockLocXDelta, ay+currentBlockLocYDelta);
             if(block!=null){
-                CleanupBlock pushedBlock = ns.touchBlock(ns.blockInd(block.name()));
+                CleanupGridContinuousBlock pushedBlock = ns.touchBlock(ns.blockInd(block.name()));
                 pushedBlock.x = pushedBlock.x + bxdelta;
                 pushedBlock.y = pushedBlock.y + bydelta;
 
@@ -1083,7 +1095,7 @@ public class CleanupTurtleBotModel implements FullStateModel {
 
 
             if(blocksOnTheSide.size()>0){
-                CleanupBlock pushedBlock = ns.touchBlock(ns.blockInd(blocksOnTheSide.get(0).name()));
+                CleanupGridContinuousBlock pushedBlock = ns.touchBlock(ns.blockInd(blocksOnTheSide.get(0).name()));
                 pushedBlock.x = blockOnTheSideFinalPositionX;
                 pushedBlock.y = blockOnTheSideFinalPositionY;
             }

@@ -10,6 +10,7 @@ import amdp.taxiamdpdomains.testingtools.BoundedRTDPForTests;
 import burlap.behavior.policy.Policy;
 import burlap.behavior.policy.PolicyUtils;
 import burlap.behavior.singleagent.Episode;
+import burlap.behavior.singleagent.auxiliary.StateEnumerator;
 import burlap.behavior.valuefunction.ConstantValueFunction;
 import burlap.debugtools.RandomFactory;
 import burlap.mdp.auxiliary.DomainGenerator;
@@ -274,7 +275,8 @@ public class CleanupL1Domain implements DomainGenerator{
 
 
 
-        State s = CleanupDomain.getClassicState(true);
+//        State s = CleanupDomain.getClassicState(true);
+        State s = CleanupDomain.getState(true, true, 3, 4);
 
         StateConditionTest sc = new InRegionSC("block0", "room1");
         RewardFunction rf = new GoalBasedRF(sc, 1.);
@@ -299,6 +301,19 @@ public class CleanupL1Domain implements DomainGenerator{
 
 
             SimpleHashableStateFactory shf = new SimpleHashableStateFactory(false);
+//            StateEnumerator se = new StateEnumerator(adomain, shf);
+//            se.findReachableStatesAndEnumerate(as);
+//            System.out.println("states enum: " + se.numStatesEnumerated());
+//
+//            for(int i=0;i<se.numStatesEnumerated();i++){
+//                for(int j=0;j<se.numStatesEnumerated();j++){
+//                    State si = se.getStateForEnumerationId(i);
+//                    State sj = se.getStateForEnumerationId(j);
+//                    if(!si.equals(sj) && si.toString())
+//                }
+//            }
+
+
             BoundedRTDPForTests planner = new BoundedRTDPForTests(adomain, 0.99, shf,
                     new ConstantValueFunction(0.),
                     new ConstantValueFunction(1.),

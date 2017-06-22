@@ -49,9 +49,9 @@ public class CleanupBaseLevelTest {
         Integer rooms = 1;
         Integer numberOfObjects = 3;
 
-        int numEnvSteps = 255;
+        int numEnvSteps = 1000;
 
-        bellmanBudget.setValue(2560000*4);
+        bellmanBudget.setValue(-1);
 
         for(int i =0;i<args.length;i++){
             String str = args[i];
@@ -73,8 +73,11 @@ public class CleanupBaseLevelTest {
 
 //            RewardFunction heuristicRF = new PullCostGoalRF(sc, 1., 0.);
 
-        PropositionalFunction pf = new CleanupDomain.PF_InRegion(CleanupDomain.PF_BLOCK_IN_ROOM, new String[]{CleanupDomain.CLASS_BLOCK, CleanupDomain.CLASS_ROOM}, false);
+//        PropositionalFunction pf = new CleanupDomain.PF_InRegion(CleanupDomain.PF_BLOCK_IN_ROOM, new String[]{CleanupDomain.CLASS_BLOCK, CleanupDomain.CLASS_ROOM}, false);
 
+//        PropositionalFunction pf = new CleanupDomain.PF_TwoObjectsInRegions(CleanupDomain.PF_BLOCK_IN_ROOM_AGENT_IN_DOOR, new String[]{CleanupDomain.CLASS_BLOCK, CleanupDomain.CLASS_ROOM, CleanupDomain.CLASS_AGENT, CleanupDomain.CLASS_DOOR}, false, true);
+
+        PropositionalFunction pf = new CleanupDomain.PF_TwoObjectsInRegions(CleanupDomain.PF_BLOCK_IN_ROOM_AGENT_IN_ROOM, new String[]{CleanupDomain.CLASS_BLOCK, CleanupDomain.CLASS_ROOM, CleanupDomain.CLASS_AGENT, CleanupDomain.CLASS_ROOM}, false, false);
 
         State s;
 
@@ -82,21 +85,33 @@ public class CleanupBaseLevelTest {
 
         String goalRoom;
 
-        if(rooms == 1){
-            s = CleanupDomain.getClassicState(true);
-            goalRoom = "room1";
+        if(false) {
+
+            if (rooms == 1) {
+                s = CleanupDomain.getClassicState(true);
+                goalRoom = "room1";
 //            gp =  new GroundedProp(pf,new String[]{"block0", "room1"});
 
-        }else if(rooms == 2){
-            s = CleanupDomain.getState(true, true, 3, 3);
-            goalRoom = "room2";
+            } else if (rooms == 2) {
+                s = CleanupDomain.getState(true, true, 3, 3);
+                goalRoom = "room2";
 
-        }else{
-            s = CleanupDomain.getState(true, true, 3, 4);
-            goalRoom = "room3";
+            } else {
+                s = CleanupDomain.getState(true, true, 3, 4);
+                goalRoom = "room3";
+            }
+
         }
 
-        gp =  new GroundedProp(pf,new String[]{"block0", goalRoom});
+//        s = CleanupDomain.getClassicState(true);
+//        goalRoom = "room9";
+
+        s = CleanupDomain.getParameterizedClassicState(true,2);
+        goalRoom = "room2";
+
+        String agentRoom = "room1";
+
+        gp =  new GroundedProp(pf,new String[]{"block0", goalRoom,"agent0", agentRoom});//,
 
 
         GroundedPropSC l0sc = new GroundedPropSC(gp);
@@ -116,16 +131,19 @@ public class CleanupBaseLevelTest {
 
 
         FixedDoorCleanupEnv env = new FixedDoorCleanupEnv(domain, s);
-        if(rooms==3) {
-            env.addLockedDoor("door0");
+        if(false) {
+            if (rooms == 3) {
+                env.addLockedDoor("door0");
+            }
         }
 
         int numRollouts = -1;
-        int numSteps = 150;
+        int numSteps = 1000;
         long startTime = System.currentTimeMillis();
 
         ValueFunction heuristic = getL0Heuristic(s, heuristicRF, lockProb);
-        BoundedRTDPForTests brtd = new BoundedRTDPForTests(domain, 0.99, new SimpleHashableStateFactory(false), new ConstantValueFunction(0.0), heuristic, 0.01, numRollouts);
+        BoundedRTDPForTests brtd = new BoundedRTDPForTests(domain, 0.99, new SimpleHashableStateFactory(false),
+                new ConstantValueFunction(0.0), new ConstantValueFunction(1.0), 0.1, numRollouts);
         brtd.setMaxRolloutDepth(numSteps);
         brtd.toggleDebugPrinting(false);
         brtd.setRemainingNumberOfBellmanUpdates(bellmanBudget);
@@ -135,10 +153,12 @@ public class CleanupBaseLevelTest {
         Policy p = new GreedyReplan(brtd);
 
 
-        long endTime = System.currentTimeMillis();
-        long duration = (endTime - startTime);
+
 //        System.out.println("total time: " + duration);
         Episode ea = PolicyUtils.rollout(p,env,numEnvSteps);
+
+        long endTime = System.currentTimeMillis();
+        long duration = (endTime - startTime);
 
 //        System.out.println(brtd.getNumberOfBellmanUpdates());
 
@@ -148,10 +168,11 @@ public class CleanupBaseLevelTest {
 //        System.out.println("Total planners used: " + brtdpList.size());
         System.out.println("Base level Cleanup");
         System.out.println("room number: "+rooms);
+        System.out.println("total time: " + duration);
 
-//        Visualizer v = CleanupVisualiser.getVisualizer("amdp/data/resources/robotImages");
-//        //		System.out.println(ea.getState(0).toString());
-//        new EpisodeSequenceVisualizer(v, domain, Arrays.asList(ea));
+        Visualizer v = CleanupVisualiser.getVisualizer("amdp/data/resources/robotImages");
+        //		System.out.println(ea.getState(0).toString());
+        new EpisodeSequenceVisualizer(v, domain, Arrays.asList(ea));
 
 
     }
@@ -176,6 +197,12 @@ public class CleanupBaseLevelTest {
         else if(PFName.equals(CleanupDomain.PF_BLOCK_IN_DOOR)){
             return new BlockToRegionHeuristic(params[0], params[1], discount, lockProb);
         }
+        else if(PFName.equals(CleanupDomain.PF_BLOCK_IN_DOOR_AGENT_IN_DOOR)||PFName.equals(CleanupDomain.PF_BLOCK_IN_DOOR_AGENT_IN_ROOM)||
+                PFName.equals(CleanupDomain.PF_BLOCK_IN_ROOM_AGENT_IN_DOOR)||PFName.equals(CleanupDomain.PF_BLOCK_IN_ROOM_AGENT_IN_ROOM)){
+            System.out.println("was here");
+            return new ConstantValueFunction(1.);
+        }
+
         throw new RuntimeException("Unknown Reward Function with propositional function " + PFName + ". Cannot construct l0 heuristic.");
     }
 

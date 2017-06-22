@@ -40,8 +40,16 @@ public class AMDPAgent{
 	protected List<List<Action>> policyStack;
 
 	protected StackObserver onlineStackObserver;
-	
 
+	protected boolean outputEpisodesForTest = false;
+	protected int outputEpisodeFrequency = 100;
+	protected String path;
+
+	public void recordTestEpisodes(int outputEpisodeFrequency, String path){
+		this.path = path;
+		this.outputEpisodeFrequency = outputEpisodeFrequency;
+		this.outputEpisodesForTest = true;
+	}
 
 
 	public AMDPAgent(GroundedTask rootGroundedTask, List<AMDPPolicyGenerator> inputPolicyGenerators){
@@ -115,6 +123,10 @@ public class AMDPAgent{
 	}
 
 
+	public void changePolicyGenerator(int level, AMDPPolicyGenerator policyGenerator){
+		this.PolicyGenerators.remove(level);
+		this.PolicyGenerators.add(level, policyGenerator);
+	}
 
 	protected void decompose(Environment env, int level, GroundedTask gt, int maxSteps, Episode ea){
 		State s = StateStack.get(level);
@@ -172,7 +184,9 @@ public class AMDPAgent{
 				str = str + ga.toString();
 				DPrint.cl(debugCode , str);
 				ea.transition(eo);
-//				ea.recordTransitionTo(ga, eo.op, eo.r);
+				if(this.outputEpisodesForTest && (ea.actionSequence.size()%this.outputEpisodeFrequency==0)){
+					ea.write(this.path);
+				}
 				StateStack.set(level, eo.op);
 				s = eo.op;	
 				stepCount++;

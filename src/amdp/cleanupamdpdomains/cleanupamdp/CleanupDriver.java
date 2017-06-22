@@ -9,7 +9,11 @@ import amdp.cleanup.state.CleanupAgent;
 import amdp.cleanup.state.CleanupDoor;
 import amdp.cleanup.state.CleanupState;
 import amdp.cleanupamdpdomains.cleanuplevel1.CleanupL1Domain;
+import amdp.cleanupamdpdomains.cleanuplevel1.state.CleanupAgentL1;
+import amdp.cleanupamdpdomains.cleanuplevel1.state.CleanupBlockL1;
+import amdp.cleanupamdpdomains.cleanuplevel1.state.CleanupL1State;
 import amdp.cleanupamdpdomains.cleanuplevel1.state.CleanupL1StateMapper;
+import amdp.cleanupamdpdomains.cleanuplevel2.state.CleanupAgentL2;
 import amdp.cleanupamdpdomains.cleanuplevel2.state.CleanupBlockL2;
 import amdp.cleanupamdpdomains.cleanuplevel2.state.CleanupL2State;
 import amdp.cleanupamdpdomains.cleanuplevel2.state.CleanupL2StateMapper;
@@ -59,7 +63,7 @@ public class CleanupDriver {
     static double L1Ratio = 0.65;
     static double L0Ratio = 0.3;
 
-    static int maxTrajectoryLength = 255;
+    static int maxTrajectoryLength = 100;
 
     public static List<BoundedRTDPForTests> brtdpList= new ArrayList<BoundedRTDPForTests>();
 
@@ -67,13 +71,13 @@ public class CleanupDriver {
 
     public static void main(String[] args) {
 
-        DPrint.toggleCode(3214986, false);
+        DPrint.toggleCode(3214986, true);
         RandomFactory randomFactory = new RandomFactory();
         Random rand = randomFactory.getMapped(0);
 
         double lockProb = 0.5;
 
-        Integer rooms = 3;
+        Integer rooms = 1;
         Integer numberOfObjects = 3;
 
         int numEnvSteps = 255;
@@ -113,26 +117,41 @@ public class CleanupDriver {
         PropositionalFunction pf = new CleanupDomain.PF_InRegion(CleanupDomain.PF_BLOCK_IN_ROOM, new String[]{CleanupDomain.CLASS_BLOCK, CleanupDomain.CLASS_ROOM}, false);
 
 
+//        PropositionalFunction pf = new CleanupDomain.PF_TwoObjectsInRegions(CleanupDomain.PF_BLOCK_IN_ROOM_AGENT_IN_ROOM, new String[]
+//                {CleanupDomain.CLASS_BLOCK, CleanupDomain.CLASS_ROOM, CleanupDomain.CLASS_AGENT, CleanupDomain.CLASS_ROOM}, false,false);
+
         State s;
 
         String goalRoom;
 
-        if(rooms == 1){
-            s = CleanupDomain.getClassicState(true);
-            goalRoom = "room1";
+        if(false) {
+
+            if (rooms == 1) {
+                s = CleanupDomain.getClassicState(true);
+                goalRoom = "room1";
 //            gp =  new GroundedProp(pf,new String[]{"block0", "room1"});
 
-        }else if(rooms == 2){
-            s = CleanupDomain.getState(true, true, 3, 3);
-            goalRoom = "room2";
+            } else if (rooms == 2) {
+                s = CleanupDomain.getState(true, true, 3, 3);
+                goalRoom = "room2";
 
-        }else{
-            s = CleanupDomain.getState(true, true, 3, 4);
-            goalRoom = "room3";
+            } else {
+                s = CleanupDomain.getState(true, true, 3, 4);
+                goalRoom = "room3";
+            }
         }
 
+
+//        s = CleanupDomain.getTenRoomState(true);
+//        goalRoom = "room9";
+
+        s = CleanupDomain.getParameterizedClassicState(true,1);
+        goalRoom = "room1";
+
         //TODO: fix this to be the L2 and L0 goals!!!
-        GroundedProp gp =  new GroundedProp(pf,new String[]{"block0", goalRoom});
+//        GroundedProp gp =  new GroundedProp(pf,new String[]{"block0", "room1","agent0", "room2"});
+
+        GroundedProp gp =  new GroundedProp(pf,new String[]{"block0", "room1"});
 
         GroundedPropSC l0sc = new GroundedPropSC(gp);
         GoalBasedRF l0rf = new GoalBasedRF(l0sc, 1., 0.);
@@ -147,8 +166,15 @@ public class CleanupDriver {
 
 
 
+        List<String> goalBlocks = new ArrayList<>(); //Arrays.asList("block0");//"block1"
+        List<String> goalRooms = new ArrayList<>(); //Arrays.asList(goalRoom);//"room3"
+        goalBlocks.add("block0");
+//        goalBlocks.add("agent0");
 
-        StateConditionTest sc = new CleanupL1Domain.InRegionSC("block0", goalRoom);
+        goalRooms.add("room1");
+//        goalRooms.add("room2");
+
+        StateConditionTest sc = new CleanupAMDPLanguageDriver.L1Goal(goalBlocks, goalRooms);//new CleanupL1Domain.InRegionSC("block0", goalRoom);
         RewardFunction rf = new GoalBasedRF(sc, 1.);
         TerminalFunction tf = new GoalConditionTF(sc);
 
@@ -164,8 +190,8 @@ public class CleanupDriver {
 //        System.out.println("actions: " + a.size());
 
 
-        List<String> goalBlocks = Arrays.asList("block0" );//"block1"
-        List<String> goalRooms = Arrays.asList(goalRoom);//"room3"
+//        List<String> goalBlocks = Arrays.asList("block0" );//"block1"
+//        List<String> goalRooms = Arrays.asList(goalRoom);//"room3"
         StateConditionTest l2sc = new L2Goal(goalBlocks, goalRooms);
         GoalBasedRF l2rf = new GoalBasedRF(l2sc, 1., 0.);
         GoalConditionTF l2tf = new GoalConditionTF(l2sc);
@@ -230,16 +256,26 @@ public class CleanupDriver {
 //        SimulatedEnvironment envN = new SimulatedEnvironment(dgen.generateDomain(), s);
 
         FixedDoorCleanupEnv env = new FixedDoorCleanupEnv(dgen.generateDomain(), s);
-        if(rooms==3) {
-            env.addLockedDoor("door0");
+        if(false){
+            if(rooms==3) {
+                env.addLockedDoor("door0");
+            }
         }
 
 
+
+
+
+        long startTime = System.currentTimeMillis();
         Episode e = agent.actUntilTermination(env, maxTrajectoryLength);
 
-//        Visualizer v = CleanupVisualiser.getVisualizer("amdp/data/resources/robotImages");
-//        //		System.out.println(ea.getState(0).toString());
-//        new EpisodeSequenceVisualizer(v, domain, Arrays.asList(e));
+        long endTime = System.currentTimeMillis();
+
+        long duration = endTime - startTime;
+
+        Visualizer v = CleanupVisualiser.getVisualizer("amdp/data/resources/robotImages");
+        //		System.out.println(ea.getState(0).toString());
+        new EpisodeSequenceVisualizer(v, domain, Arrays.asList(e));
 
         System.out.println(e.actionSequence.size());
         System.out.println(e.discountedReturn(1.));
@@ -268,6 +304,7 @@ public class CleanupDriver {
         }
 
 
+        System.out.println("total duration: " +duration);
 
 
     }
@@ -303,7 +340,7 @@ public class CleanupDriver {
             brtdp.setRemainingNumberOfBellmanUpdates(bellmanBudgetL2);
             brtdpList.add(brtdp);
 
-            brtdp.setMaxRolloutDepth(50);
+            brtdp.setMaxRolloutDepth(200);
             brtdp.toggleDebugPrinting(false);
             brtdp.planFromState(s);
             return new GreedyReplan(brtdp);
@@ -327,7 +364,7 @@ public class CleanupDriver {
                     -1);
             brtdp.setRemainingNumberOfBellmanUpdates(bellmanBudgetL2);
             brtdpList.add(brtdp);
-            brtdp.setMaxRolloutDepth(50);
+            brtdp.setMaxRolloutDepth(200);
             brtdp.toggleDebugPrinting(false);
             brtdp.planFromState(s);
             return brtdp;
@@ -360,7 +397,7 @@ public class CleanupDriver {
                     2000);
 
             brtdp.setRemainingNumberOfBellmanUpdates(bellmanBudgetL1);
-            brtdp.setMaxRolloutDepth(200);
+            brtdp.setMaxRolloutDepth(500);
             brtdp.toggleDebugPrinting(false);
 
             Policy p = brtdp.planFromState(s);
@@ -387,7 +424,7 @@ public class CleanupDriver {
                     2000);
 
             brtdp.setRemainingNumberOfBellmanUpdates(bellmanBudgetL1);
-            brtdp.setMaxRolloutDepth(200);
+            brtdp.setMaxRolloutDepth(500);
             brtdp.toggleDebugPrinting(false);
 
             Policy p = brtdp.planFromState(s);
@@ -420,7 +457,7 @@ public class CleanupDriver {
                     new ConstantValueFunction(0.),
                     heuristic, 0.01, -1);
             brtd.setRemainingNumberOfBellmanUpdates(bellmanBudgetL0);
-            brtd.setMaxRolloutDepth(100);
+            brtd.setMaxRolloutDepth(200);
             brtd.toggleDebugPrinting(false);
             brtdpList.add(brtd);
             brtd.planFromState(s);
@@ -443,7 +480,7 @@ public class CleanupDriver {
                     new ConstantValueFunction(0.),
                     heuristic, 0.01, -1);
             brtd.setRemainingNumberOfBellmanUpdates(bellmanBudgetL0);
-            brtd.setMaxRolloutDepth(100);
+            brtd.setMaxRolloutDepth(200);
             brtd.toggleDebugPrinting(false);
             brtdpList.add(brtd);
             brtd.planFromState(s);
@@ -688,15 +725,64 @@ public class CleanupDriver {
         public boolean satisfies(State s) {
 
             for(int i = 0; i < this.blocks.size(); i++){
-                CleanupBlockL2 b = (CleanupBlockL2)((CleanupL2State)s).object(this.blocks.get(i));
-                String r = this.rooms.get(i);
-                if(!b.inRegion.equals(r)){
-                    return false;
+                if(this.blocks.get(i).toLowerCase().contains("agent")){
+                    CleanupAgentL2 b = (CleanupAgentL2)((CleanupL2State)s).object(this.blocks.get(i));
+                    String r = this.rooms.get(i);
+                    if(!b.inRegion.equals(r)){
+                        return false;
+                    }
                 }
+                else{
+                    CleanupBlockL2 b = (CleanupBlockL2)((CleanupL2State)s).object(this.blocks.get(i));
+                    String r = this.rooms.get(i);
+                    if(!b.inRegion.equals(r)){
+                        return false;
+                    }
+                }
+
             }
 
             return true;
         }
     }
+
+
+    public static class L1Goal implements StateConditionTest{
+
+        List<String> blocks;
+        List<String> rooms;
+
+
+        public L1Goal(List<String> blocks, List<String> rooms) {
+            this.blocks = blocks;
+            this.rooms = rooms;
+        }
+
+        @Override
+        public boolean satisfies(State s) {
+
+            for(int i = 0; i < this.blocks.size(); i++){
+                if(this.blocks.get(i).toLowerCase().contains("agent")){
+                    CleanupAgentL1 b = (CleanupAgentL1)((CleanupL1State)s).object(this.blocks.get(i));
+                    String r = this.rooms.get(i);
+                    if(!b.inRegion.equals(r)){
+                        return false;
+                    }
+                }
+                else{
+                    CleanupBlockL1 b = (CleanupBlockL1)((CleanupL1State)s).object(this.blocks.get(i));
+                    String r = this.rooms.get(i);
+                    if(!b.inRegion.equals(r)){
+                        return false;
+                    }
+                }
+
+            }
+
+            return true;
+        }
+    }
+
+
 
 }

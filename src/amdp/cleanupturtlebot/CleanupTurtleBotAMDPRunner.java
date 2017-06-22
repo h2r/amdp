@@ -1,6 +1,7 @@
 package amdp.cleanupturtlebot;
 
 import amdp.amdpframework.*;
+import amdp.cleanup.CleanupDomain;
 import amdp.cleanup.CleanupVisualiser;
 import amdp.cleanup.FixedDoorCleanupEnv;
 import amdp.cleanup.PullCostGoalRF;
@@ -323,16 +324,55 @@ public class CleanupTurtleBotAMDPRunner {
         TaskNode b2r_l2t = new L2TaskNode(b2r_l2, adgen.generateDomain(),L2Subtasks);
 
 
-        TaskNode root = new RootTaskNode("root",new TaskNode[]{a2r_l2t,b2r_l2t},aadomain, l2tf,l2rf);
 
-        //btL0,
-//        TaskNode root = new RootTaskNode("root", new TaskNode[]{ftL0,  ccwtL0, cwtL0}, dgenL1.generateDomain(), l0tf, l0rf);
+        TaskNode root ;
         List<AMDPPolicyGenerator> pgList = new ArrayList<AMDPPolicyGenerator>();
-        pgList.add(0, new continuousPolicyGenerator(domain, lockProb));
-        pgList.add(1, new l0PolicyGenerator(domain, lockProb));
-        pgList.add(2,new amdp.cleanupamdpdomains.cleanupamdp.CleanupDriver.l1PolicyGenerator(adomain));
-        pgList.add(3,new amdp.cleanupamdpdomains.cleanupamdp.CleanupDriver.l2PolicyGenerator(aadomain));
+        if(true) {
+            root = new RootTaskNode("root", new TaskNode[]{a2r_l2t, b2r_l2t}, aadomain, l2tf, l2rf);
 
+            //btL0,
+//        TaskNode root = new RootTaskNode("root", new TaskNode[]{ftL0,  ccwtL0, cwtL0}, dgenL1.generateDomain(), l0tf, l0rf);
+
+            pgList.add(0, new continuousPolicyGenerator(domain, lockProb));
+            pgList.add(1, new l0PolicyGenerator(domain, lockProb));
+            pgList.add(2, new amdp.cleanupamdpdomains.cleanupamdp.CleanupDriver.l1PolicyGenerator(adomain));
+            pgList.add(3, new amdp.cleanupamdpdomains.cleanupamdp.CleanupDriver.l2PolicyGenerator(aadomain));
+        }
+        else{
+
+            PropositionalFunction pfTemp = new CleanupTurtleBotL0Domain.PF_InLocation(CleanupTurtleBotL0Domain.PF_AGENT_IN_LOCATION, new String[]{CleanupTurtleBotL0Domain.CLASS_AGENT}, 3,3);
+
+            GroundedProp gpL1Temp =  new GroundedProp(pfTemp,new String[]{CleanupTurtleBotL0Domain.CLASS_AGENT+0});
+
+            GroundedPropSC l0scTemp = new GroundedPropSC(gpL1Temp);
+            GoalBasedRF l0rfTemp = new PullCostGoalRF(l0scTemp, 1., 0.);
+
+            TerminalFunction l0tfTemp = new GoalConditionTF(l0scTemp);
+
+//            final TerminalFunction tfTemp = new TerminalFunction() {
+//                @Override
+//                public boolean isTerminal(State state) {
+//                    CleanupState sTemp = (CleanupState)state;
+//                    if(sTemp.agent.x==3 && sTemp.agent.y==3){
+//                        return true;
+//                    }
+//                    return false;
+//                }
+//            };
+//
+//            RewardFunction rfTemp = new RewardFunction() {
+//                @Override
+//                public double reward(State state, Action action, State state1) {
+//                    if(tfTemp.isTerminal(state)){
+//                        return 1;
+//                    }
+//                    return -1;
+//                }
+//            };
+            root = new RootTaskNode("root", new TaskNode[]{ftL0, cwtL0, ccwtL0}, dgenLD.generateDomain(), l0tfTemp, l0rfTemp);
+            pgList.add(0, new continuousPolicyGenerator(domain, lockProb));
+            pgList.add(1, new l0PolicyGenerator(domain, lockProb));
+        }
         GroundedTask gtRoot = root.getApplicableGroundedTasks(sL1).get(0);
 
         long tStart = System.currentTimeMillis();
@@ -351,6 +391,8 @@ public class CleanupTurtleBotAMDPRunner {
 //        }
 
 
+
+            agent.recordTestEpisodes(10, "amdp/out/record.episode");
             Episode e = agent.actUntilTermination(env, 30000);
 
             long tEnd = System.currentTimeMillis();
@@ -360,6 +402,9 @@ public class CleanupTurtleBotAMDPRunner {
             Visualizer v = CleanupContinuousVisualiser.getVisualizer("amdp/data/resources/robotImages");
             //		System.out.println(ea.getState(0).toString());
             new EpisodeSequenceVisualizer(v, domain, Arrays.asList(e));
+
+
+            new EpisodeSequenceVisualizer(v, domain, "amdp/out/");
 
             System.out.println(e.actionSequence.size());
             System.out.println(e.discountedReturn(1.));
@@ -390,39 +435,61 @@ public class CleanupTurtleBotAMDPRunner {
         else{
 //            CleanupContinuousState s = (CleanupContinuousState)CleanupContinuousDomain.getClassicState(true);
 
-            System.out.println("state original: " + s.toString());
+            if(true) {
+                // run experiment
 
-            String actionTopic = "/mobile_base/commands/velocity"; //set this to the appropriate topic for your robot!
-            String actionMsg = "geometry_msgs/Twist";
+//                System.out.println("state original: " + s.toString());
 
-            //3.28084
+                String actionTopic = "/mobile_base/commands/velocity"; //set this to the appropriate topic for your robot!
+                String actionMsg = "geometry_msgs/Twist";
 
-            //define the relevant twist messages that we'll use for our actions
-            Twist fTwist = new Twist(new Vector3(0.1,0,0.), new Vector3()); //forward
-            Twist bTwist = new Twist(new Vector3(-0.1,0,0.), new Vector3()); //backward
-            Twist rTwist = new Twist(new Vector3(), new Vector3(0,0,-0.5)); //clockwise rotate
-            Twist rccwTwist = new Twist(new Vector3(), new Vector3(0,0,0.5)); //counter-clockwise rotate
+                //3.28084
 
-            String rosURI  = "ws://192.168.160.162:9090";
-            TurtleBotEnvironment tb_env = new TurtleBotEnvironment(rosURI, (CleanupContinuousState)s);
+                //define the relevant twist messages that we'll use for our actions
+                Twist fTwist = new Twist(new Vector3(0.1, 0, 0.), new Vector3()); //forward
+                Twist bTwist = new Twist(new Vector3(-0.1, 0, 0.), new Vector3()); //backward
+                Twist rTwist = new Twist(new Vector3(), new Vector3(0, 0, -0.5)); //clockwise rotate
+                Twist rccwTwist = new Twist(new Vector3(), new Vector3(0, 0, 0.5)); //counter-clockwise rotate
 
-            System.out.println(tb_env.currentObservation().toString());
+                String rosURI = "ws://192.168.160.162:9090";
+                TurtleBotEnvironment tb_env = new TurtleBotEnvironment(rosURI, (CleanupContinuousState) s);
 
-            int period = 500; //publish every 500 milliseconds...
-            int nPublishes = 1; //...for 5 times for each action execution...
-            boolean sync = true; //...and use synchronized action execution
-            tb_env.setActionPublisher(ACTION_MOVE_FORWARD, new RepeatingActionPublisher(actionTopic, actionMsg, tb_env.getRosBridge(), fTwist, period, nPublishes, sync));
-            tb_env.setActionPublisher(ACTION_MOVE_BACK, new RepeatingActionPublisher(actionTopic, actionMsg, tb_env.getRosBridge(), bTwist, period, nPublishes, sync));
-            tb_env.setActionPublisher(ACTION_TURN_CW, new RepeatingActionPublisher(actionTopic, actionMsg, tb_env.getRosBridge(), rTwist, period, nPublishes, sync));
-            tb_env.setActionPublisher(ACTION_TURN_CCW, new RepeatingActionPublisher(actionTopic, actionMsg, tb_env.getRosBridge(), rccwTwist, period, nPublishes, sync));
+                System.out.println(tb_env.currentObservation().toString());
+
+                int period = 100; //publish every 500 milliseconds...
+                int nPublishes = 1; //...for 5 times for each action execution...
+                boolean sync = true; //...and use synchronized action execution
+                tb_env.setActionPublisher(ACTION_MOVE_FORWARD, new RepeatingActionPublisher(actionTopic, actionMsg, tb_env.getRosBridge(), fTwist, period, nPublishes, sync));
+                tb_env.setActionPublisher(ACTION_MOVE_BACK, new RepeatingActionPublisher(actionTopic, actionMsg, tb_env.getRosBridge(), bTwist, period, nPublishes, sync));
+                tb_env.setActionPublisher(ACTION_TURN_CW, new RepeatingActionPublisher(actionTopic, actionMsg, tb_env.getRosBridge(), rTwist, period, nPublishes, sync));
+                tb_env.setActionPublisher(ACTION_TURN_CCW, new RepeatingActionPublisher(actionTopic, actionMsg, tb_env.getRosBridge(), rccwTwist, period, nPublishes, sync));
 
 
-            Episode e = agent.actUntilTermination(tb_env, 70);
+                agent.recordTestEpisodes(10, "amdp/out/record.episode");
+                Episode e = agent.actUntilTermination(tb_env, 500);
 
-            Visualizer v = CleanupContinuousVisualiser.getVisualizer("amdp/data/resources/robotImages");
-            //		System.out.println(ea.getState(0).toString());
-            new EpisodeSequenceVisualizer(v, domain, Arrays.asList(e));
-            System.out.println("steps:" + e.numTimeSteps());
+                Visualizer v = CleanupContinuousVisualiser.getVisualizer("amdp/data/resources/robotImages");
+
+
+                //		System.out.println(ea.getState(0).toString());
+                new EpisodeSequenceVisualizer(v, domain, Arrays.asList(e));
+                System.out.println("steps:" + e.numTimeSteps());
+
+
+//                Visualizer v1 = CleanupContinuousVisualiser.getVisualizer("amdp/data/resources/robotImages");
+
+
+                //		System.out.println(ea.getState(0).toString());
+//                new EpisodeSequenceVisualizer(v1, domain, "amdp/out/");
+
+
+            }
+            else{
+                // run previous episode!
+                Visualizer v = CleanupContinuousVisualiser.getVisualizer("amdp/data/resources/robotImages");
+
+                new EpisodeSequenceVisualizer(v, domain, "amdp/out/");
+            }
         }
 
 
@@ -639,6 +706,8 @@ public class CleanupTurtleBotAMDPRunner {
                     // check state and gt
                     // if gt move fwd first set yourself in the correct direction
                     CleanupContinuousState sTemp = (CleanupContinuousState)s;
+
+//                    System.out.println("printing direction: " + sTemp.agent.direction);
                     if(gtTemp.getAction().actionName().equals(CleanupTurtleBotL0Domain.ACTION_MOVE_FORWARD)){
                         // get direction from action
                         // next make sure that current direction is lined up to the current direction
@@ -757,12 +826,16 @@ public class CleanupTurtleBotAMDPRunner {
         else if(PFName.equals(CleanupTurtleBotL0Domain.PF_AGENT_IN_DOOR)){
             return new amdp.cleanupamdpdomains.cleanupamdp.CleanupDriver.AgentToRegionHeuristic(params[1], discount, lockProb);
         }
+        else if(PFName.equals(CleanupTurtleBotL0Domain.PF_AGENT_IN_LOCATION)){
+            return new ConstantValueFunction(0.);
+        }
         else if(PFName.equals(CleanupTurtleBotL0Domain.PF_BLOCK_IN_ROOM)){
             return new amdp.cleanupamdpdomains.cleanupamdp.CleanupDriver.BlockToRegionHeuristic(params[0], params[1], discount, lockProb);
         }
         else if(PFName.equals(CleanupTurtleBotL0Domain.PF_BLOCK_IN_DOOR)){
             return new amdp.cleanupamdpdomains.cleanupamdp.CleanupDriver.BlockToRegionHeuristic(params[0], params[1], discount, lockProb);
         }
+
         throw new RuntimeException("Unknown Reward Function with propositional function " + PFName + ". Cannot construct l0 heuristic.");
     }
 

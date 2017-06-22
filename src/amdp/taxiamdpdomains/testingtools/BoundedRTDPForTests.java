@@ -323,6 +323,7 @@ public class BoundedRTDPForTests extends DynamicProgramming implements Planner {
     public double runRollout(State s){
         LinkedList<HashableState> trajectory = new LinkedList<HashableState>();
 
+        int ij=0;
         HashableState csh = this.hashingFactory.hashState(s);
 
         while(!model.terminal(csh.s()) && (trajectory.size() < this.maxDepth+1 || this.maxDepth == -1)
@@ -331,6 +332,7 @@ public class BoundedRTDPForTests extends DynamicProgramming implements Planner {
             if(this.runRolloutsInReverse){
                 trajectory.offerFirst(csh);
             }
+            ij++;
 
             this.setValueFunctionToLowerBound();
             QValue mxL = this.maxQ(csh.s());

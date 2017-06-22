@@ -84,6 +84,7 @@ public class CleanupContinuousDomain implements DomainGenerator {
 
 
     public static final String PF_AGENT_IN_CELL = "agentInCell";
+    public static final String PF_AGENT_IN_CELL_GOING_BACK = "agentInCellGoingBack";
     public static final String PF_AGENT_IN_DIR = "agentInDir";
 
 
@@ -130,13 +131,13 @@ public class CleanupContinuousDomain implements DomainGenerator {
 
     // we check half a block
     // this can be lowered to .05 too, 0.1 = 5 degrees so 10 degree error in total.
-    public static double							rangeForDirectionChecks = .2;
+    public static double							rangeForDirectionChecks = .1;
 
 
 
     // we check half a block
     // this can be lowered to .05 too, 0.1 = 5 degrees so 10 degree error in total.
-    public static double							smallerRangeForDirectionChecks = .2;
+    public static double							smallerRangeForDirectionChecks = .1;
 
 
     // agent cell check distance
@@ -219,6 +220,7 @@ public class CleanupContinuousDomain implements DomainGenerator {
         pfs.add(new PF_InRegion(PF_AGENT_IN_DOOR, new String[]{CLASS_AGENT, CLASS_DOOR}, true));
         pfs.add(new PF_InRegion(PF_BLOCK_IN_DOOR, new String[]{CLASS_BLOCK, CLASS_DOOR}, true));
         pfs.add(new PF_InCell(PF_AGENT_IN_CELL, new String[]{}));
+        pfs.add(new PF_InCellGoingBack(PF_AGENT_IN_CELL_GOING_BACK, new String[]{}));
         pfs.add(new PF_InDir(PF_AGENT_IN_DIR, new String[]{}));
 
         for(String col : COLORS){
@@ -365,19 +367,19 @@ public class CleanupContinuousDomain implements DomainGenerator {
         int right = (Integer) r.get(VAR_RIGHT);
 
         //TODO: if problems remove from here!!!!
-        for(CleanupContinuousDoor d : ((CleanupContinuousState)s).doors){
-            if(y >= d.bottom-2 && y <= d.top+2 && x >= d.left && x <= d.right+1){
-                return false;
-            }
-        }
+//        for(CleanupContinuousDoor d : ((CleanupContinuousState)s).doors){
+//            if(y >= d.bottom-2 && y <= d.top+2 && x >= d.left && x <= d.right+1){
+//                return false;
+//            }
+//        }
 
-        if(y <= bottom || y >= top || x <= left && x >= right){
-            ObjectInstance door = doorContainingPoint(s, x, y);
-            if(door == null){
-                return true;
-            }
-            return false;
-        }
+//        if(y <= bottom || y >= top || x <= left && x >= right){
+//            ObjectInstance door = doorContainingPoint(s, x, y);
+//            if(door == null){
+//                return true;
+//            }
+//            return false;
+//        }
 
         //TODO: to here!!!
 
@@ -656,12 +658,83 @@ public class CleanupContinuousDomain implements DomainGenerator {
             // check angle of
             boolean facingNorth = CleanupContinuousDomain.angularDistance(a.direction,0)<smallerRangeForDirectionChecks;
 
+            boolean facingSouth = CleanupContinuousDomain.angularDistance(a.direction,Math.PI)<smallerRangeForDirectionChecks;
+
             boolean facingEast = CleanupContinuousDomain.angularDistance(a.direction,-Math.PI/2)<smallerRangeForDirectionChecks;
+
+            boolean facingWest = CleanupContinuousDomain.angularDistance(a.direction,Math.PI/2)<smallerRangeForDirectionChecks;
+
+//            // this is so the goal is one extra step forward because it is already in the minimum distance to the goal cell ceil co-ordinates
+//            if(facingNorth){
+//                yG = yG+1;
+//            }else if(facingEast){
+//                xG = xG+1;
+//            }
+//
+//            if(facingSouth){
+//                System.out.println("facing south: yG" + yG + "xG: " + xG);
+//            }
+//
+//
+////            System.out.println(x+","+y+","+xG+","+yG);
+//
+//            double distance = Math.sqrt((x-xG)*(x-xG)+(y-yG)*(y-yG));
+////            System.out.println("distance when moving back!: " + distance);
+//            return distance < agentCellCheckDistance;
+
             if(facingNorth){
-                yG = yG+1;
-            }else if(facingEast){
-                xG = xG+1;
+                yG = yG+0.5;
+                return yG<=y;
             }
+            if(facingEast){
+                xG = xG+0.5;
+                return xG<=x;
+            }
+            if(facingWest){
+                xG = xG+0.5;
+                return x<=xG;
+            }
+
+            yG = yG+0.5;
+            return y<=yG;
+
+
+
+
+        }
+
+    }
+
+
+    public static class PF_InCellGoingBack extends PropositionalFunction {
+
+        public PF_InCellGoingBack(String name, String [] params){
+            super(name, params);
+        }
+
+        @Override
+        public boolean isTrue(OOState s, String... params) {
+
+            CleanupContinuousAgent a = ((CleanupContinuousState)s).agent;
+            Double x = (Double) a.get(VAR_X);
+            Double y = (Double)a.get(VAR_Y);
+
+            Double xG=0.;
+            Double yG=0.;
+            if(params.length!=0){
+                xG = Double.parseDouble(params[0]);
+                yG = Double.parseDouble(params[1]);
+            }
+
+            // check angle of
+//            boolean facingNorth = CleanupContinuousDomain.angularDistance(a.direction,0)<smallerRangeForDirectionChecks;
+//
+//            boolean facingEast = CleanupContinuousDomain.angularDistance(a.direction,-Math.PI/2)<smallerRangeForDirectionChecks;
+//            if(facingNorth){
+//                yG = yG+1;
+//            }else if(facingEast){
+//                xG = xG+1;
+//            }
 
 //            System.out.println(x+","+y+","+xG+","+yG);
 
@@ -915,6 +988,86 @@ public class CleanupContinuousDomain implements DomainGenerator {
 
     }
 
+
+    public static State getParameterizedClassicState(boolean includeDirectionAttribute, int factor){
+
+
+
+        CleanupContinuousRoom r1 = new CleanupContinuousRoom(CLASS_ROOM+0,4*factor, 0, 0, 8*factor,"red");
+        CleanupContinuousRoom r2 = new CleanupContinuousRoom(CLASS_ROOM+1,8*factor, 0, 4*factor, 4*factor, "green");
+        CleanupContinuousRoom r3 = new CleanupContinuousRoom(CLASS_ROOM+2, 8*factor, 4*factor, 4*factor, 8*factor, "blue");
+        List<CleanupContinuousRoom> rooms = new ArrayList<CleanupContinuousRoom>();
+        rooms.add(r1);
+        rooms.add(r2);
+        rooms.add(r3);
+//        setRoom(s, 0, 4, 0, 0, 8, "red");
+//        setRoom(s, 1, 8, 0, 4, 4, "green");
+//        setRoom(s, 2, 8, 4, 4, 8, "blue");
+
+        CleanupContinuousDoor d1 = new CleanupContinuousDoor(CLASS_DOOR+0,0,4*factor, 6*factor, 4*factor, 6*factor,false);
+        CleanupContinuousDoor d2 = new CleanupContinuousDoor(CLASS_DOOR+1,0,4*factor, 2*factor, 4*factor, 2*factor,false);
+        List<CleanupContinuousDoor> doors = new ArrayList<CleanupContinuousDoor>();
+        doors.add(d1);
+        doors.add(d2);
+
+//        setDoor(s, 0, 4, 6, 4, 6);
+//        setDoor(s, 1, 4, 2, 4, 2);
+
+
+        CleanupContinuousAgent agent = new CleanupContinuousAgent(CLASS_AGENT+0, 6.5*factor, 6.5*factor,0, 2*factor, 1*factor);
+//        if(includeDirectionAttribute){
+//            agent.directional = true;
+//            agent.currentDirection = "south";
+//        }
+
+        CleanupContinuousBlock block1 = new CleanupContinuousBlock(CLASS_BLOCK+0,2.5*factor,2.5*factor,"basket", "red");
+        CleanupContinuousBlock block2 = new CleanupContinuousBlock(CLASS_BLOCK+1,3.5*factor,3.5*factor,"chair", "blue");
+//        CleanupBlock block3 = new CleanupBlock(CLASS_BLOCK+2,3*factor,1*factor,"bag", "magenta");
+        CleanupContinuousBlock block4 = new CleanupContinuousBlock(CLASS_BLOCK+3,4.5*factor,3.5*factor,"chair", "blue");
+//        CleanupContinuousBlock block5 = new CleanupContinuousBlock(CLASS_BLOCK+4,4.5*factor,1.5*factor,"chair", "blue");
+//        CleanupBlock block6 = new CleanupBlock(CLASS_BLOCK+5,5*factor,2*factor,"chair", "blue");
+//        CleanupBlock block7 = new CleanupBlock(CLASS_BLOCK+6,6*factor,2*factor,"chair", "blue");
+//        CleanupBlock block8 = new CleanupBlock(CLASS_BLOCK+7,1*factor,3*factor,"chair", "blue");
+//        CleanupBlock block9 = new CleanupBlock(CLASS_BLOCK+8,5*factor,3*factor,"chair", "blue");
+//        CleanupBlock block10 = new CleanupBlock(CLASS_BLOCK+9,6*factor,3*factor,"chair", "blue");
+//
+//        CleanupBlock block11 = new CleanupBlock(CLASS_BLOCK+10,6*factor,7*factor,"chair", "blue");
+//        CleanupBlock block12 = new CleanupBlock(CLASS_BLOCK+11,7*factor,7*factor,"chair", "blue");
+//        CleanupBlock block13 = new CleanupBlock(CLASS_BLOCK+12,5*factor,5*factor,"chair", "blue");
+//        CleanupBlock block14 = new CleanupBlock(CLASS_BLOCK+13,5*factor,6*factor,"chair", "blue");
+//        CleanupBlock block15 = new CleanupBlock(CLASS_BLOCK+14,6*factor,1*factor,"chair", "blue");
+//        CleanupBlock block16 = new CleanupBlock(CLASS_BLOCK+15,7*factor,1*factor,"chair", "blue");
+//        CleanupBlock block17 = new CleanupBlock(CLASS_BLOCK+16,5*factor,1*factor,"chair", "blue");
+
+
+
+        List<CleanupContinuousBlock> blocks = new ArrayList<CleanupContinuousBlock>();
+        blocks.add(block1);
+        blocks.add(block2);
+//        blocks.add(block3);
+        blocks.add(block4);
+//        blocks.add(block5);
+//        blocks.add(block6);
+//        blocks.add(block7);
+//        blocks.add(block8);
+//        blocks.add(block9);
+//        blocks.add(block10);
+//        blocks.add(block11);
+//        blocks.add(block12);
+//        blocks.add(block13);
+//        blocks.add(block14);
+//        blocks.add(block15);
+//        blocks.add(block16);
+//        blocks.add(block17);
+
+//        setAgent(s, 6, 6);
+//        setBlock(s, 0, 2, 2, "basket", "red");
+
+
+        CleanupContinuousState s = new CleanupContinuousState(agent,blocks, doors, rooms);
+        return s;
+
+    }
 
 
     public boolean pointWithinABlock(double x, double y, State s){

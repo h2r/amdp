@@ -24,7 +24,7 @@ public class CleanupContinuousAgent implements ObjectInstance {
     public double direction;
     public double length = 2;
     public double width = 1;
-    public double rangeForEquality = 0.1;
+    public final static double rangeForEquality = 0.1;
 
     public final static List<Object> keys = Arrays.<Object>asList(VAR_X, VAR_Y, VAR_DIR, VAR_LENGTH, VAR_WIDTH);
 

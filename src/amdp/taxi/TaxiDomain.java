@@ -717,7 +717,7 @@ public class TaxiDomain implements DomainGenerator{
             // params here are the name of a location like Location 1
 
             boolean returnValue = false;
-            int i = ns.locationIndWithColour(params[0]);
+            int i = ns.locationInd(params[0]);
             TaxiLocation location = ns.touchLocation(i);//TaxiLocation)((TaxiState)s).object(params[0]);
 
             int xl = location.x;

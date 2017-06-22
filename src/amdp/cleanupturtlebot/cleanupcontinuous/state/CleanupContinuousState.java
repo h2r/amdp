@@ -33,6 +33,8 @@ public class CleanupContinuousState implements MutableOOState {
         this.rooms = rooms;
     }
 
+    public CleanupContinuousState(){}
+
     @Override
     public MutableOOState addObject(ObjectInstance o) {
         throw new RuntimeException("Cannot add objects to state.");
@@ -41,7 +43,7 @@ public class CleanupContinuousState implements MutableOOState {
     @Override
     public MutableOOState removeObject(String objectName) {
         if(objectName.equals(agent.name())){
-            new RuntimeException("Cannot remove taxi agent object from state.");
+            new RuntimeException("Cannot remove agent object from state.");
         }
         int indL = this.roomInd(objectName);
         if(indL != -1) {

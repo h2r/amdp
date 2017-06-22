@@ -4,6 +4,7 @@ import amdp.cleanup.state.*;
 import amdp.cleanupturtlebot.cleanupcontinuous.CleanupContinuousDomain;
 import amdp.cleanupturtlebot.cleanupcontinuous.state.*;
 import burlap.mdp.auxiliary.StateMapping;
+import burlap.mdp.core.oo.state.OOState;
 import burlap.mdp.core.state.State;
 
 import java.util.ArrayList;
@@ -14,7 +15,7 @@ import java.util.List;
  */
 public class CleanupContinuousToDiscreteStateMapper implements StateMapping{
     @Override
-    public State mapState(State s) {
+    public OOState mapState(State s) {
         CleanupContinuousState sIn = (CleanupContinuousState) s;
 
         List<CleanupContinuousDoor> doorsC = sIn.doors;

@@ -69,10 +69,10 @@ public class CleanupL2Domain implements DomainGenerator {
 
 
         d.addActionTypes(
-                new GoToRoomActionType(CleanupL1Domain.ACTION_AGENT_TO_ROOM,
-                        new String[]{CleanupDomain.CLASS_ROOM}),
                 new BlockToRoomActionType(CleanupL1Domain.ACTION_BLOCK_TO_ROOM, new String[]{CleanupDomain.CLASS_BLOCK,
-                        CleanupDomain.CLASS_ROOM}));
+                        CleanupDomain.CLASS_ROOM}),
+                new GoToRoomActionType(CleanupL1Domain.ACTION_AGENT_TO_ROOM,
+                        new String[]{CleanupDomain.CLASS_ROOM}));
 
         CleanupL2Model smodel = new CleanupL2Model();
         FactoredModel model = new FactoredModel(smodel, rf, tf);

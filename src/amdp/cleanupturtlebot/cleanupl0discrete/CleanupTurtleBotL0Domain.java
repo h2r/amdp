@@ -84,6 +84,18 @@ public class CleanupTurtleBotL0Domain implements DomainGenerator {
     public static final String PF_BLOCK_IN_ROOM = "blockInRoom";
     public static final String PF_AGENT_IN_DOOR = "agentInDoor";
     public static final String PF_BLOCK_IN_DOOR = "blockInDoor";
+    public static final String PF_AGENT_IN_LOCATION = "agentInLocation";
+
+    public static final String PF_GO_NORTH = "goNorth";
+    public static final String PF_GO_SOUTH = "goSouth";
+    public static final String PF_GO_EAST = "goEast";
+    public static final String PF_GO_WEST = "goWest";
+
+
+    public static final String PF_BLOCK_IN_DOOR_AGENT_IN_ROOM = "blockInDoorAgentInRoom";
+    public static final String PF_BLOCK_IN_DOOR_AGENT_IN_DOOR = "blockInDoorAgentInDoor";
+    public static final String PF_BLOCK_IN_ROOM_AGENT_IN_ROOM = "blockInRoomAgentInRoom";
+    public static final String PF_BLOCK_IN_ROOM_AGENT_IN_DOOR = "blockInDoorAgentInDoor";
 
     public static final String PF_WALL_NORTH = "wallNorth";
     public static final String PF_WALL_SOUTH = "wallSouth";
@@ -106,6 +118,7 @@ public class CleanupTurtleBotL0Domain implements DomainGenerator {
     protected static final String PF_RCOLORBASE = "roomIs";
     protected static final String PF_BCOLORBASE = "blockIs";
     protected static final String PF_BSHAPEBASE = "shape";
+
 
 
     private static RewardFunction rf;
@@ -184,10 +197,17 @@ public class CleanupTurtleBotL0Domain implements DomainGenerator {
 
 
         pfs.add(new PF_InRegion(PF_AGENT_IN_ROOM, new String[]{CLASS_AGENT, CLASS_ROOM}, false));
+        pfs.add(new PF_InLocation(PF_AGENT_IN_LOCATION, new String[]{CLASS_AGENT}, 3, 3));
         pfs.add(new PF_InRegion(PF_BLOCK_IN_ROOM, new String[]{CLASS_BLOCK, CLASS_ROOM}, false));
 
         pfs.add(new PF_InRegion(PF_AGENT_IN_DOOR, new String[]{CLASS_AGENT, CLASS_DOOR}, true));
         pfs.add(new PF_InRegion(PF_BLOCK_IN_DOOR, new String[]{CLASS_BLOCK, CLASS_DOOR}, true));
+
+
+        pfs.add(new PF_TwoObjectsInRegions(PF_BLOCK_IN_ROOM_AGENT_IN_ROOM, new String[]{CLASS_BLOCK, CLASS_ROOM, CLASS_AGENT, CLASS_ROOM}, false,false));
+        pfs.add(new PF_TwoObjectsInRegions(PF_BLOCK_IN_ROOM_AGENT_IN_DOOR, new String[]{CLASS_BLOCK, CLASS_ROOM, CLASS_AGENT, CLASS_DOOR}, false,true));
+        pfs.add(new PF_TwoObjectsInRegions(PF_BLOCK_IN_DOOR_AGENT_IN_ROOM, new String[]{CLASS_BLOCK, CLASS_DOOR, CLASS_AGENT, CLASS_ROOM}, true,false));
+        pfs.add(new PF_TwoObjectsInRegions(PF_BLOCK_IN_DOOR_AGENT_IN_DOOR, new String[]{CLASS_BLOCK, CLASS_DOOR, CLASS_AGENT, CLASS_DOOR}, true,true));
 
         for(String col : COLORS){
             pfs.add(new PF_IsColor(PF_RoomColorName(col),  new String[]{CLASS_ROOM}, col));
@@ -901,6 +921,56 @@ public class CleanupTurtleBotL0Domain implements DomainGenerator {
 
 
 
+    public static class PF_InDirection extends PropositionalFunction {
+
+        protected String direction;
+        int northX, northY, southX, southY, eastX, eastY, westX, westY;
+        String northD, southD, eastD, westD;
+
+        public PF_InDirection(String name, String[] params, State start, String direction){
+            super(name, params);
+            int startX = ((CleanupState) start).touchAgent().x;
+            int startY = ((CleanupState) start).touchAgent().y;
+            this.direction = direction;
+            northX = startX;
+            northY = startY+1;
+            northD = "north";
+
+            southX = startX;
+            southY = startY-1;
+            southD = "south";
+
+            eastX = startX+1;
+            eastY = startY;
+            eastD = "east";
+
+            westX = startX-1;
+            westY = startY;
+            westD = "west";
+        }
+
+        @Override
+        public boolean isTrue(OOState ooState, String... params) {
+            CleanupAgent agent = ((CleanupState) ooState).agent;
+            int curX = agent.x;
+            int curY = agent.y;
+            String curD = agent.currentDirection;
+
+            switch (direction) {
+                case "north":
+                    return northX == curX && northY == curY && northD.equals(curD);
+                case "south":
+                    return southX == curX && southY == curY && southD.equals(curD);
+                case "east":
+                    return eastX == curX && eastY == curY && eastD.equals(curD);
+                case "west":
+                    return westX == curX && westY == curY && westD.equals(curD);
+                default:
+                    throw new RuntimeException("Unknown direction parameter");
+            }
+        }
+    }
+
     public static class PF_InRegion extends PropositionalFunction {
 
         protected boolean countBoundary;
@@ -920,6 +990,66 @@ public class CleanupTurtleBotL0Domain implements DomainGenerator {
 
             ObjectInstance region = s.object(params[1]);
             return regionContainsPoint(region, x, y, countBoundary);
+
+        }
+
+    }
+
+
+    public static class PF_TwoObjectsInRegions extends PropositionalFunction {
+
+        protected boolean countBoundary1;
+        protected boolean countBoundary2;
+
+        public PF_TwoObjectsInRegions(String name, String [] params, boolean countBoundary1, boolean countBoundary2){
+            super(name, params);
+            this.countBoundary1 = countBoundary1;
+            this.countBoundary2 = countBoundary2;
+        }
+
+        @Override
+        public boolean isTrue(OOState s, String... params) {
+
+            ObjectInstance o1 = ((CleanupState)s).object(params[0]);
+            int x1 = (Integer) o1.get(VAR_X);
+            int y1 = (Integer)o1.get(VAR_Y);
+
+            ObjectInstance o2 = ((CleanupState)s).object(params[2]);
+            int x2 = (Integer) o2.get(VAR_X);
+            int y2 = (Integer)o2.get(VAR_Y);
+
+
+            ObjectInstance region1 = s.object(params[1]);
+            ObjectInstance region2 = s.object(params[3]);
+            return regionContainsPoint(region1, x1, y1, countBoundary1) && regionContainsPoint(region2, x2, y2, countBoundary2);
+
+        }
+
+    }
+
+
+
+    public static class PF_InLocation extends PropositionalFunction {
+
+        protected int x;
+        protected int y;
+
+        public PF_InLocation(String name, String [] params, int x, int y){
+            super(name, params);
+            this.x = x;
+            this.y = y;
+        }
+
+        @Override
+        public boolean isTrue(OOState s, String... params) {
+
+            ObjectInstance o = ((CleanupState)s).object(params[0]);
+            int xIn = (Integer) o.get(VAR_X);
+            int yIn = (Integer)o.get(VAR_Y);
+
+
+//            ObjectInstance region = s.object(params[1]);
+            return x==xIn && y==yIn;
 
         }
 
@@ -1083,6 +1213,86 @@ public class CleanupTurtleBotL0Domain implements DomainGenerator {
     }
 
 
+    public static State getParameterizedClassicState(boolean includeDirectionAttribute, int factor){
+
+
+
+        CleanupRoom r1 = new CleanupRoom(CLASS_ROOM+0,4*factor, 0, 0, 8*factor,"red");
+        CleanupRoom r2 = new CleanupRoom(CLASS_ROOM+1,8*factor, 0, 4*factor, 4*factor, "green");
+        CleanupRoom r3 = new CleanupRoom(CLASS_ROOM+2, 8*factor, 4*factor, 4*factor, 8*factor, "blue");
+        List<CleanupRoom> rooms = new ArrayList<CleanupRoom>();
+        rooms.add(r1);
+        rooms.add(r2);
+        rooms.add(r3);
+//        setRoom(s, 0, 4, 0, 0, 8, "red");
+//        setRoom(s, 1, 8, 0, 4, 4, "green");
+//        setRoom(s, 2, 8, 4, 4, 8, "blue");
+
+        CleanupDoor d1 = new CleanupDoor(CLASS_DOOR+0,0,4*factor, 6*factor, 4*factor, 6*factor,false);
+        CleanupDoor d2 = new CleanupDoor(CLASS_DOOR+1,0,4*factor, 2*factor, 4*factor, 2*factor,false);
+        List<CleanupDoor> doors = new ArrayList<CleanupDoor>();
+        doors.add(d1);
+        doors.add(d2);
+
+//        setDoor(s, 0, 4, 6, 4, 6);
+//        setDoor(s, 1, 4, 2, 4, 2);
+
+
+        CleanupAgent agent = new CleanupAgent(CLASS_AGENT+0, 6*factor, 6*factor);
+        if(includeDirectionAttribute){
+            agent.directional = true;
+            agent.currentDirection = "south";
+        }
+
+        CleanupBlock block1 = new CleanupBlock(CLASS_BLOCK+0,2*factor,2*factor,"basket", "red");
+        CleanupBlock block2 = new CleanupBlock(CLASS_BLOCK+1,3*factor,3*factor,"chair", "blue");
+//        CleanupBlock block3 = new CleanupBlock(CLASS_BLOCK+2,3*factor,1*factor,"bag", "magenta");
+        CleanupBlock block4 = new CleanupBlock(CLASS_BLOCK+3,4*factor,3*factor,"chair", "blue");
+        CleanupBlock block5 = new CleanupBlock(CLASS_BLOCK+4,4*factor,1*factor,"chair", "blue");
+//        CleanupBlock block6 = new CleanupBlock(CLASS_BLOCK+5,5*factor,2*factor,"chair", "blue");
+//        CleanupBlock block7 = new CleanupBlock(CLASS_BLOCK+6,6*factor,2*factor,"chair", "blue");
+//        CleanupBlock block8 = new CleanupBlock(CLASS_BLOCK+7,1*factor,3*factor,"chair", "blue");
+//        CleanupBlock block9 = new CleanupBlock(CLASS_BLOCK+8,5*factor,3*factor,"chair", "blue");
+//        CleanupBlock block10 = new CleanupBlock(CLASS_BLOCK+9,6*factor,3*factor,"chair", "blue");
+//
+//        CleanupBlock block11 = new CleanupBlock(CLASS_BLOCK+10,6*factor,7*factor,"chair", "blue");
+//        CleanupBlock block12 = new CleanupBlock(CLASS_BLOCK+11,7*factor,7*factor,"chair", "blue");
+//        CleanupBlock block13 = new CleanupBlock(CLASS_BLOCK+12,5*factor,5*factor,"chair", "blue");
+//        CleanupBlock block14 = new CleanupBlock(CLASS_BLOCK+13,5*factor,6*factor,"chair", "blue");
+//        CleanupBlock block15 = new CleanupBlock(CLASS_BLOCK+14,6*factor,1*factor,"chair", "blue");
+//        CleanupBlock block16 = new CleanupBlock(CLASS_BLOCK+15,7*factor,1*factor,"chair", "blue");
+//        CleanupBlock block17 = new CleanupBlock(CLASS_BLOCK+16,5*factor,1*factor,"chair", "blue");
+
+
+
+        List<CleanupBlock> blocks = new ArrayList<CleanupBlock>();
+        blocks.add(block1);
+        blocks.add(block2);
+//        blocks.add(block3);
+        blocks.add(block4);
+        blocks.add(block5);
+//        blocks.add(block6);
+//        blocks.add(block7);
+//        blocks.add(block8);
+//        blocks.add(block9);
+//        blocks.add(block10);
+//        blocks.add(block11);
+//        blocks.add(block12);
+//        blocks.add(block13);
+//        blocks.add(block14);
+//        blocks.add(block15);
+//        blocks.add(block16);
+//        blocks.add(block17);
+
+//        setAgent(s, 6, 6);
+//        setBlock(s, 0, 2, 2, "basket", "red");
+
+
+        CleanupState s = new CleanupState(agent,blocks, doors, rooms);
+        return s;
+
+    }
+
     public static State getClassicState(boolean includeDirectionAttribute){
         // 8 x 8 room
 
@@ -1214,10 +1424,11 @@ public class CleanupTurtleBotL0Domain implements DomainGenerator {
 
 //            RewardFunction heuristicRF = new PullCostGoalRF(sc, 1., 0.);
 
-            PropositionalFunction pf = new PF_InRegion(CleanupTurtleBotL0Domain.PF_BLOCK_IN_ROOM, new String[]{CLASS_BLOCK, CLASS_ROOM}, false);
+//            PropositionalFunction pf = new PF_InRegion(CleanupTurtleBotL0Domain.PF_BLOCK_IN_ROOM, new String[]{CLASS_BLOCK, CLASS_ROOM}, false);
 
+            PropositionalFunction pf = new PF_TwoObjectsInRegions(PF_BLOCK_IN_ROOM_AGENT_IN_ROOM, new String[]{CLASS_BLOCK, CLASS_ROOM,CLASS_AGENT, CLASS_ROOM}, false, false);
 
-            GroundedProp gp =  new GroundedProp(pf,new String[]{"block0", "room1"});
+            GroundedProp gp =  new GroundedProp(pf,new String[]{"block0", "room2","agent0", "room1"});
 
             GroundedPropSC l0sc = new GroundedPropSC(gp);
             GoalBasedRF l0rf = new GoalBasedRF(l0sc, 1., 0.);
@@ -1231,7 +1442,8 @@ public class CleanupTurtleBotL0Domain implements DomainGenerator {
             dgen.setLockProbability(lockProb);
             OOSADomain domain = dgen.generateDomain();
 
-            State s = CleanupTurtleBotL0Domain.getClassicState(true);
+//            State s = CleanupTurtleBotL0Domain.getClassicState(true);
+            State s = CleanupTurtleBotL0Domain.getParameterizedClassicState(true,1);
 
 
 
@@ -1241,8 +1453,8 @@ public class CleanupTurtleBotL0Domain implements DomainGenerator {
             long startTime = System.currentTimeMillis();
 
             ConstantValueFunction heuristic = new ConstantValueFunction(1.);//CleanupDomainDriver.getL0Heuristic(s, heuristicRF);
-            BoundedRTDP brtd = new BoundedRTDP(domain, 0.99, new SimpleHashableStateFactory(false), new ConstantValueFunction(0.0), heuristic, 0.01, 500);
-            brtd.setMaxRolloutDepth(50);
+            BoundedRTDP brtd = new BoundedRTDP(domain, 0.99, new SimpleHashableStateFactory(false), new ConstantValueFunction(0.0), heuristic, 0.01, 2000);
+            brtd.setMaxRolloutDepth(100);
             brtd.toggleDebugPrinting(false);
             Policy P = brtd.planFromState(s);
 
