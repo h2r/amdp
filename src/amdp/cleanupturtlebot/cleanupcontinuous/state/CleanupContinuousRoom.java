@@ -32,6 +32,11 @@ public class CleanupContinuousRoom implements ObjectInstance {
         this.colour = colour;
     }
 
+
+    public CleanupContinuousRoom(){
+
+    }
+
     @Override
     public String className() {
         return CLASS_ROOM;

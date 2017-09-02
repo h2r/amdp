@@ -32,6 +32,9 @@ public class CleanupBlock implements ObjectInstance {
         this.shape = shape;
         this.colour = colour;
     }
+    public CleanupBlock(){
+
+    }
 
     @Override
     public String className() {

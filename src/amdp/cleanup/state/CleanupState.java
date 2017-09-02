@@ -33,6 +33,10 @@ public class CleanupState implements MutableOOState {
         this.rooms = rooms;
     }
 
+    public CleanupState(){
+
+    }
+
     @Override
     public MutableOOState addObject(ObjectInstance o) {
         throw new RuntimeException("Cannot add objects to state.");

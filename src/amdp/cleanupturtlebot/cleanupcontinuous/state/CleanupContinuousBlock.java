@@ -33,6 +33,10 @@ public class CleanupContinuousBlock implements ObjectInstance {
         this.colour = colour;
     }
 
+    public CleanupContinuousBlock(){
+
+    }
+
     @Override
     public String className() {
         return CLASS_BLOCK;
