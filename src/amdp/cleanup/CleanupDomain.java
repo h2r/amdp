@@ -779,6 +779,11 @@ public class CleanupDomain implements DomainGenerator {
 
 
 
+
+
+
+
+
     public static State getParameterizedClassicState(boolean includeDirectionAttribute, int factor){
 
 
@@ -1044,7 +1049,7 @@ public class CleanupDomain implements DomainGenerator {
         }
 
 
-        if(true){
+        if(false){
             double lockProb = 0.5;
 
 //            StateConditionTest sc = new GroundedPropSC(new GroundedProp(domain.getPropFunction(CleanupWorld.PF_BLOCK_IN_ROOM),  new String[]{"block0", "room1"}));
@@ -1096,7 +1101,7 @@ public class CleanupDomain implements DomainGenerator {
             //		System.out.println(ea.getState(0).toString());
             new EpisodeSequenceVisualizer(v, domain, Arrays.asList(ea));
         }
-        if(false){
+        if(true){
 
 
 
@@ -1108,7 +1113,7 @@ public class CleanupDomain implements DomainGenerator {
             dgen.setLockProbability(0.5);
             OOSADomain domain = dgen.generateDomain();
 
-            State s = CleanupDomain.getClassicState(true);
+            State s = CleanupDomain.getChangingState(true);
 
 			/*ObjectInstance b2 = new ObjectInstance(domain.getObjectClass(CLASSBLOCK), CLASSBLOCK+1);
 		s.addObject(b2);
@@ -1125,22 +1130,47 @@ public class CleanupDomain implements DomainGenerator {
 
             exp.initGUI();
 
-//            List<StateTransitionProb> tps = domain.getAction(ACTION_SOUTH).getAssociatedGroundedAction().getTransitions(s);
-//            for(TransitionProbability tp : tps){
-//                System.out.println(tp.s.toString());
-//                System.out.println("----------------");
-//            }
-//
-//            System.out.println("========================");
-//
-//            State s2 = s.copy();
-//            CleanupWorld.setAgent(s2, 6, 5);
-//            tps = domain.getAction(ACTION_SOUTH).getAssociatedGroundedAction().getTransitions(s2);
-//            for(TransitionProbability tp : tps){
-//                System.out.println(tp.s.toString());
-//                System.out.println("----------------");
-//            }
         }
+
+    }
+
+
+    public static State getChangingState(boolean includeDirectionAttribute){
+
+
+
+        CleanupRoom r1 = new CleanupRoom(CLASS_ROOM+0,4, 0, 0, 8,"blue");
+        CleanupRoom r2 = new CleanupRoom(CLASS_ROOM+1,8, 0, 4, 4, "green");
+        CleanupRoom r3 = new CleanupRoom(CLASS_ROOM+2, 8, 4, 4, 8, "red");
+        List<CleanupRoom> rooms = new ArrayList<CleanupRoom>();
+        rooms.add(r1);
+        rooms.add(r2);
+        rooms.add(r3);
+
+        CleanupDoor d1 = new CleanupDoor(CLASS_DOOR+0,0,4, 6, 4, 6,false);
+        CleanupDoor d2 = new CleanupDoor(CLASS_DOOR+1,0,4, 2, 4, 2,false);
+        List<CleanupDoor> doors = new ArrayList<CleanupDoor>();
+        doors.add(d1);
+        doors.add(d2);
+
+        CleanupAgent agent = new CleanupAgent(CLASS_AGENT+0, 3, 2);
+        if(includeDirectionAttribute){
+            agent.directional = true;
+            agent.currentDirection = "south";
+        }
+
+        CleanupBlock block1 = new CleanupBlock(CLASS_BLOCK+0,3,1,"chair", "blue");
+        CleanupBlock block2 = new CleanupBlock(CLASS_BLOCK+1,1,6,"chair", "red");
+        List<CleanupBlock> blocks = new ArrayList<CleanupBlock>();
+        blocks.add(block1);
+        blocks.add(block2);
+
+
+
+        CleanupState s = new CleanupState(agent,blocks, doors, rooms);
+
+        System.out.println(s);
+        return s;
 
     }
 

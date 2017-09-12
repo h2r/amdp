@@ -89,6 +89,7 @@ import static amdp.cleanupturtlebot.cleanupcontinuous.CleanupContinuousDomain.*;
  * Created by ngopalan on 8/31/16.
  */
 public class CleanupAMDPLanguageDriver {
+    // This code is for the CORL paper that runs AMDPs from language
 
     static protected MutableGlobalInteger bellmanBudget = new MutableGlobalInteger(-1);
     static protected MutableGlobalInteger bellmanBudgetL0 = new MutableGlobalInteger(-1);
@@ -111,8 +112,8 @@ public class CleanupAMDPLanguageDriver {
     public static void main(String[] args) throws Exception{
 
         roomHash.put("roomIsRed", CleanupDomain.CLASS_ROOM+0);
-        roomHash.put("roomIsGreen", CleanupDomain.CLASS_ROOM+1);
-        roomHash.put("roomIsBlue", CleanupDomain.CLASS_ROOM+2);
+        roomHash.put("roomIsGreen", CleanupDomain.CLASS_ROOM+2);
+        roomHash.put("roomIsBlue", CleanupDomain.CLASS_ROOM+1);
 
 //        DPrint.toggleCode(3214986, false);
         RandomFactory randomFactory = new RandomFactory();
@@ -126,9 +127,9 @@ public class CleanupAMDPLanguageDriver {
             if (true) {
 
 
-//                String uri = "ws://localhost:9090";
+                String uri = "ws://localhost:9090";
 
-                String uri = "ws://138.16.161.191:9090";
+//                String uri = "ws://138.16.161.191:9090";
                 RosBridge bridge = new RosBridge();
                 bridge.connect(uri, true);
 

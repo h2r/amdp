@@ -41,7 +41,7 @@ public class TurtleBotEnvironment extends AbstractMultiTopicRosEnvironment {
         CleanupContinuousAgent agentOld = stateForRooms.agent;
         CleanupContinuousBlock blockOld = stateForRooms.blocks.get(0);
         CleanupContinuousAgent agent = new CleanupContinuousAgent(agentOld.name(),
-                turtlebotPosition.x * 3.28084, turtlebotPosition.y * 3.28084, (turtlebotPosition.z + Math.PI/2),
+                turtlebotPosition.x * 3.28084, turtlebotPosition.y * 3.28084, (turtlebotPosition.z),
                 agentOld.length, agentOld.width);
         CleanupContinuousBlock block = new CleanupContinuousBlock(blockOld.name(),
                 blockPosition.x * 3.28084, blockPosition.y * 3.28084, blockOld.shape,
