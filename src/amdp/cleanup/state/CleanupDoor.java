@@ -36,6 +36,10 @@ public class CleanupDoor implements ObjectInstance {
         this.canBeLocked = canBeLocked;
     }
 
+    public CleanupDoor(){
+
+    }
+
     @Override
     public String className() {
         return CLASS_DOOR;

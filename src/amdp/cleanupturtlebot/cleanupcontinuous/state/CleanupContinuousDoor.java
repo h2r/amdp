@@ -35,6 +35,11 @@ public class CleanupContinuousDoor implements ObjectInstance {
         this.canBeLocked = canBeLocked;
     }
 
+
+    public CleanupContinuousDoor(){
+
+    }
+
     @Override
     public String className() {
         return CLASS_DOOR;

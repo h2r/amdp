@@ -38,6 +38,10 @@ public class CleanupContinuousAgent implements ObjectInstance {
         this.direction = direction;
     }
 
+    public CleanupContinuousAgent(){
+
+    }
+
     @Override
     public String className() {
         return CLASS_AGENT;

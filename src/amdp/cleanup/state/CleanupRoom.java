@@ -33,6 +33,10 @@ public class CleanupRoom implements ObjectInstance {
         this.colour = colour;
     }
 
+    public CleanupRoom(){
+
+    }
+
     @Override
     public String className() {
         return CLASS_ROOM;

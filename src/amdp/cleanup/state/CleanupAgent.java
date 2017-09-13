@@ -32,6 +32,8 @@ public class CleanupAgent implements ObjectInstance {
         this.y= y;
     }
 
+    public CleanupAgent(){}
+
     public CleanupAgent(String name, int x, int y, String currentDirection){
         this.name = name;
         this.x= x;
